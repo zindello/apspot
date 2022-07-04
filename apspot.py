@@ -383,7 +383,7 @@ def sendspots(message, fromcallsign):
                         sendmessage('No current SOTA spots in parksnpeaks.org' + now.strftime("%Y%m%d%H%M"), fromcallsign)
                     else:
                         for index, spot in zip(range(3), sotaspots):
-                            sendmessage('SPOT ' + str(index) + ': ' + spot['actCallsign'] + ' | ' + spot['actSiteID'] + ' | ' + spot['actFreq'] + ' | ' + spot['actMode'], fromcallsign)
+                            sendmessage('SPOT ' + str(index + 1) + ': ' + spot['actCallsign'] + ' | ' + spot['actSiteID'] + ' | ' + spot['actFreq'] + ' | ' + spot['actMode'], fromcallsign)
                 else:
                     logging.info('ERROR: No Response from PNP Server for SOTA Spots')
                     sendmessage('ERROR: No Response from PNP Server for SOTA Spots', fromcallsign)
@@ -397,7 +397,7 @@ def sendspots(message, fromcallsign):
                         sendmessage('No current WWFF spots in parksnpeaks.org', fromcallsign)
                     else:
                         for index, spot in zip(range(3), json.loads(spots.text)):
-                            sendmessage('SPOT ' + str(index) + ': ' + spot['actCallsign'] + ' | ' + spot['WWFFid'] + ' | ' + spot['actFreq'] + ' | ' + spot['actMode'], fromcallsign)
+                            sendmessage('SPOT ' + str(index + 1) + ': ' + spot['actCallsign'] + ' | ' + spot['WWFFid'] + ' | ' + spot['actFreq'] + ' | ' + spot['actMode'], fromcallsign)
                 else:
                     sendmessage('ERROR: No Response from PNP Server for WWFF Spots', fromcallsign)
             case 'SIOTA':
@@ -412,7 +412,7 @@ def sendspots(message, fromcallsign):
                     potaspots.sort(key=extract_potaid, reverse=True)
                     logging.debug(potaspots)
                     for index, spot in zip(range(3), potaspots):
-                        sendmessage('SPOT ' + str(index) + ': ' + spot['activator'] + ' | ' + spot['reference'] + ' | ' + spot['frequency'] + ' | ' + spot['mode'], fromcallsign)
+                        sendmessage('SPOT ' + str(index + 1) + ': ' + spot['activator'] + ' | ' + spot['reference'] + ' | ' + spot['frequency'] + ' | ' + spot['mode'], fromcallsign)
                 else:
                     sendmessage("ERROR: No response from POTA server", fromcallsign)
             case _:
