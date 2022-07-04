@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Container Fargate Template
+
+Parameters:
+  ContainerVersion:
+    Type: String
+    Description: Container docker image/tag
+    Default: '276800331103.dkr.ecr.ap-southeast-2.amazonaws.com/apspot:stable'
+  CALLSIGN:
+    Type: String
+    Description: APRS Passcode
+  PASSCODE:
+    Type: String
+    Description: APRS Passcode
+  PNPAPIKEY:
+    Type: String
+    Description: ParksNPeaks API Key
+
+Resources:
+
+  ContainerServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group"
+      VpcId: "vpc-0129fb45f049ff482"
+
+  ContainerCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: APSPOTCluster
+
+  ContainerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      NetworkMode: awsvpc
+      TaskRoleArn: !Ref ContainerExecutionRole
+      ExecutionRoleArn: !Ref ContainerExecutionRole
+      Memory: 4096
+      Cpu: 1024
+      RequiresCompatibilities: 
+        - FARGATE
+      ContainerDefinitions:
+        - Name: Container
+          Image: !Ref "ContainerVersion"
+          LogConfiguration: 
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true            
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: "apspot"
+              awslogs-stream-prefix: apspot
+          Environment:
+            - Name: CALLSIGN
+              Value: !Ref "CALLSIGN"
+            - Name: PASSCODE
+              Value: !Ref "PASSCODE"
+            - Name: PNPURL
+              Value: "https://parksnpeaks.org/api"
+            - Name: PNPUSERID
+              Value: "APSPOT"
+            - Name: PNPAPIKEY
+              Value: !Ref "PNPAPIKEY"
+            - Name: SOTAURL
+              Value: "https://https://api2.sota.org.uk"
+            - Name: SOTAUSER
+              Value: "5021"
+            - Name: POTAURL
+              Value: "https://api.pota.app"            
+            - Name: DEVPOTAURL
+              Value: "https://devapi.pota.app"
+
+  ContainerFargateService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ContainerCluster
+      DesiredCount: 1
+      LaunchType: "FARGATE"
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - "subnet-00c92e2dc4d011de0"
+            - "subnet-087babeeccbd7aed1"
+            - "subnet-0161f2654d1a95ac3"
+          SecurityGroups:
+            - !Ref ContainerServiceSecurityGroup
+      TaskDefinition: !Ref ContainerTaskDefinition
+      ServiceName: "APSPOT"
+
+  ContainerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+
+  ContainerExecutionRolePolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      Roles:
+        - !Ref ContainerExecutionRole
+      PolicyName: "ContainerRolePolicy"
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:CreateLogGroup
+              - logs:DescribeLogGroups
+              - logs:PutRetentionPolicy
+              - logs:CreateLogStream
+              - logs:DescribeLogStreams
+              - logs:PutLogEvents
+            Effect: "Allow"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - cloudwatch:DeleteAlarms
+              - cloudwatch:DescribeAlarms
+              - cloudwatch:PutMetricAlarm
+            Resource: 
+            - arn:aws:cloudwatch:*:*:alarm:*
+          - Effect: Allow
+            Resource: 
+              "*"
+            Action:
+              - "ec2:CreateNetworkInterface"
+              - "ec2:DescribeNetworkInterfaces"
+              - "ec2:DeleteNetworkInterface"
+          - Effect: Allow
+            Resource:
+              - "arn:aws:ecr:ap-southeast-2:276800331103:repository/apspot"
+            Action:
+              - "ecr:BatchGetImage"
+          - Effect: Allow
+            Resource:
+              - "*"
+            Action:
+              - "ecr:DescribeImages"
+              - "ecr:DescribeRepositories"
+              - "ecr:GetAuthorizationToken"
+              - "ecr:BatchCheckLayerAvailability"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"

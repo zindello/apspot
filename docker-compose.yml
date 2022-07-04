@@ -1,0 +1,15 @@
+version: "3.3"
+services:
+  apspot:
+    build: .
+    restart: always
+    environment:
+      CALLSIGN: 'APSPOT'
+      PASSCODE: '11958'
+      PNPURL: 'https://parksnpeaks.org/api'
+      PNPUSERID: 'APSPOT'
+      PNPAPIKEY: '8B3E819BDB11'
+      SOTAURL: 'https://https://api2.sota.org.uk'
+      SOTAUSER: '5021'
+      POTAURL: 'https://api.pota.app'
+      DEVPOTAURL: 'https://devapi.pota.app'
