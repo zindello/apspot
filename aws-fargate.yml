@@ -35,8 +35,8 @@ Resources:
       NetworkMode: awsvpc
       TaskRoleArn: !Ref ContainerExecutionRole
       ExecutionRoleArn: !Ref ContainerExecutionRole
-      Memory: 4096
-      Cpu: 1024
+      Memory: 512
+      Cpu: 256
       RequiresCompatibilities: 
         - FARGATE
       ContainerDefinitions:
