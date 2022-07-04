@@ -30,23 +30,23 @@ DEVPOTAURL = os.getenv('DEVPOTAURL')
 USAGESTRING = {
     "USAGE": [
         "APSPOT USAGE INFORMATION - 6 MSGS",
-        "USAGE: TO SEND: \"! <Target> <Ref> <Freq> <Mode> <Comment>\" WITHOUT QUOTES",
-        "USAGE: TO GET SPOTS: \"SPOTS TARGET\" | REQUESTS ARE CASE INSENSITIVE",
+        "TO SPOT SEND: \"! <Target> <Ref> <Freq> <Mode> <Comment>\" WITHOUT QUOTES",
+        "TO GET SPOTS SEND: \"SPOTS TARGET\" | REQUESTS ARE CASE INSENSITIVE",
         "VALID TARGETS: SOTA, WWFF, POTA, SIOTA",
         "FOR MORE HELP SEND USAGE <Target> EG:\"USAGE WWFF\"",
-        "INCLUDE \"TEST\" IN COMMENT AND SPOT WILL NOT BE POSTED"
+        "INCLUDE \"APTEST\" IN COMMENT AND SPOT WILL NOT BE POSTED"
     ],
     "USAGE WWFF": [
-        "EXAMPLE: \"! WWFF VKFF-1929 7.144 SSB CQCQ\'"
+        "EXAMPLE: \"! WWFF VKFF-1929 7.144 SSB CQCQ\""
     ],
     "USAGE SOTA": [
-        "EXAMPLE: \"! SOTA VK3/VN-030 7.090 SSB QCQ\'"
+        "EXAMPLE: \"! SOTA VK3/VN-030 7.090 SSB QCQ\""
     ],
     "USAGE SIOTA": [
-        "EXAMPLE: \"! SIOTA VK-YNE5 7.090 SSB CQCQ\'"
+        "EXAMPLE: \"! SIOTA VK-YNE5 7.090 SSB CQCQ\""
     ],
     "USAGE POTA": [
-        "EXAMPLE: \"! POTA VK-3024 7.195 SSB CQCQ\'"
+        "EXAMPLE: \"! POTA VK-3024 7.195 SSB CQCQ\""
     ]
 }
 
