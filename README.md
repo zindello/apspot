@@ -1,5 +1,5 @@
 To Build/Push Container:
-
+aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 276800331103.dkr.ecr.ap-southeast-2.amazonaws.com
 docker build -f DockerfileAPSPOT -t 276800331103.dkr.ecr.ap-southeast-2.amazonaws.com/apspot:stable .
 docker push 276800331103.dkr.ecr.ap-southeast-2.amazonaws.com/apspot:stable
 
