@@ -1,0 +1,172 @@
+service: apspot
+
+frameworkVersion: '3'
+configValidationMode: warn
+deprecationNotificationMode: warn:summary
+
+
+provider:
+  name: aws
+  stage: prod
+  region: ap-southeast-2
+  tracing:
+    apiGateway: true
+    lambda: true
+  runtime: python3.9
+  logRetentionInDays: 14
+  httpApi:
+    name: apspot
+    metrics: true
+  environment:
+    pnp_api_url: 'https://parksnpeaks.org/api'
+    pnp_api_user_id: 'APSPOT'
+    pnp_api_user_key: '8B3E819BDB11'
+    pota_api_url: 'https://api.pota.app'
+    pota_api_dev_url: 'https://devapi.pota.app'
+    sota_api_url: 'https://https://api2.sota.org.uk'
+  ecr:
+    images:
+      apspot-aprs-prod:
+        path: ./fargate/
+        file: DockerfileAPSPOT
+        platform: linux/amd64
+
+fargate:
+  memory: '0.5GB'
+  cpu: 256
+  environment:
+    CALLSIGN: APSPOT
+    PASSCODE: 11958
+    APSPOTAPIURL: 
+      Fn::Join: ["", [ "https://", !Ref HttpApi, ".execute-api.", !Ref AWS::Region, "." , !Ref AWS::URLSuffix]]
+  logGroupName: apspotv2-prod
+  executionRoleArn: apspotv2prodexecutionrole
+  vpc:
+    securityGroupIds:
+      - !Ref apspotv2prodsecuritygroup
+    subnetIds:
+      - subnet-00c92e2dc4d011de0
+      - subnet-087babeeccbd7aed1
+      - subnet-0161f2654d1a95ac3
+    assignPublicIp: true
+  tasks:
+    apspot-aprs:
+      name: apspot-aprs-prod
+      image: apspot-aprs-prod
+      service:
+        desiredCount: 1
+
+
+functions:
+  spotswwff:
+    handler: lambdas/spots_wwff.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/wwff
+  spotssota:
+    handler: lambdas/spots_sota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/sota
+  spotssiota:
+    handler: lambdas/spots_siota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/siota
+  spotspota:
+    handler: lambdas/spots_pota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/pota
+  spotpnp:
+    handler: lambdas/spot_pnp.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spot/pnp
+  spotpota:
+    handler: lambdas/spot_pota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spot/pota
+
+
+resources:
+  Resources:
+    apspotv2prodsecuritygroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: "Security Group"
+        VpcId: "vpc-0129fb45f049ff482"
+
+    apspotv2prodexecutionrole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: apspotv2prodexecutionrole
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - ecs-tasks.amazonaws.com
+              Action:
+                - "sts:AssumeRole"
+        Path: "/"
+        Policies:
+          - PolicyName: "ContainerRolePolicy"
+            PolicyDocument:
+              Statement:
+                - Action:
+                    - logs:CreateLogGroup
+                    - logs:DescribeLogGroups
+                    - logs:PutRetentionPolicy
+                    - logs:CreateLogStream
+                    - logs:DescribeLogStreams
+                    - logs:PutLogEvents
+                  Effect: "Allow"
+                  Resource:
+                    - "*"
+                - Effect: Allow
+                  Action:
+                    - cloudwatch:DeleteAlarms
+                    - cloudwatch:DescribeAlarms
+                    - cloudwatch:PutMetricAlarm
+                  Resource: 
+                  - arn:aws:cloudwatch:*:*:alarm:*
+                - Effect: Allow
+                  Resource: 
+                    "*"
+                  Action:
+                    - "ec2:CreateNetworkInterface"
+                    - "ec2:DescribeNetworkInterfaces"
+                    - "ec2:DeleteNetworkInterface"
+                - Effect: Allow
+                  Resource:
+                    - "arn:aws:ecr:ap-southeast-2:276800331103:repository/apspot-aprs-prod"
+                  Action:
+                    - "ecr:BatchGetImage"
+                - Effect: Allow
+                  Resource:
+                    - "*"
+                  Action:
+                    - "ecr:DescribeImages"
+                    - "ecr:DescribeRepositories"
+                    - "ecr:GetAuthorizationToken"
+                    - "ecr:BatchCheckLayerAvailability"
+                    - "ecr:GetDownloadUrlForLayer"
+                    - "ecr:BatchGetImage"
+
+plugins:
+  - serverless-python-requirements
+  - serverless-fargate
