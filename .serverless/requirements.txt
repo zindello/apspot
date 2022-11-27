@@ -1,4 +1,0 @@
-cachetools
-fuzzywuzzy
-python-Levenshtein
-requests
