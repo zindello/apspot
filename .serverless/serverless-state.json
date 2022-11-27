@@ -6,7 +6,7 @@
     },
     "provider": {
       "name": "aws",
-      "stage": "prod",
+      "stage": "dev-",
       "region": "ap-southeast-2",
       "tracing": {
         "apiGateway": true,
@@ -24,15 +24,47 @@
         "pnp_api_user_key": "8B3E819BDB11",
         "pota_api_url": "https://api.pota.app",
         "pota_api_dev_url": "https://devapi.pota.app",
-        "sota_api_url": "https://https://api2.sota.org.uk"
+        "sota_api_url": "https://https://api2.sota.org.uk",
+        "APSPOTAPIURL": {
+          "Fn::Join": [
+            "",
+            [
+              "https://",
+              {
+                "Ref": "HttpApi"
+              },
+              ".execute-api.",
+              {
+                "Ref": "AWS::Region"
+              },
+              ".",
+              {
+                "Ref": "AWS::URLSuffix"
+              }
+            ]
+          ]
+        }
       },
       "ecr": {
         "images": {
-          "apspot-aprs-prod": {
+          "apspot-aprs": {
             "path": "./fargate/",
             "file": "DockerfileAPSPOT",
             "platform": "linux/amd64"
           }
+        }
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sns:Publish"
+              ],
+              "Resource": "*"
+            }
+          ]
         }
       },
       "versionFunctions": true,
@@ -112,42 +144,63 @@
           "SpotswwffLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/apspot-prod-spotswwff",
+              "LogGroupName": "/aws/lambda/apspot-dev-spotswwff",
               "RetentionInDays": 14
             }
           },
           "SpotssotaLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/apspot-prod-spotssota",
+              "LogGroupName": "/aws/lambda/apspot-dev-spotssota",
               "RetentionInDays": 14
             }
           },
           "SpotssiotaLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/apspot-prod-spotssiota",
+              "LogGroupName": "/aws/lambda/apspot-dev-spotssiota",
               "RetentionInDays": 14
             }
           },
           "SpotspotaLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/apspot-prod-spotspota",
+              "LogGroupName": "/aws/lambda/apspot-dev-spotspota",
               "RetentionInDays": 14
             }
           },
           "SpotpnpLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/apspot-prod-spotpnp",
+              "LogGroupName": "/aws/lambda/apspot-dev-spotpnp",
               "RetentionInDays": 14
             }
           },
           "SpotpotaLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/apspot-prod-spotpota",
+              "LogGroupName": "/aws/lambda/apspot-dev-spotpota",
+              "RetentionInDays": 14
+            }
+          },
+          "SnssmsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/apspot-dev-snssms",
+              "RetentionInDays": 14
+            }
+          },
+          "SearchpotaLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/apspot-dev-searchpota",
+              "RetentionInDays": 14
+            }
+          },
+          "ProcessmessageLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/apspot-dev-processmessage",
               "RetentionInDays": 14
             }
           },
@@ -177,7 +230,7 @@
                       "-",
                       [
                         "apspot",
-                        "prod",
+                        "dev",
                         "lambda"
                       ]
                     ]
@@ -193,7 +246,7 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/apspot-prod*:*"
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/apspot-dev*:*"
                           }
                         ]
                       },
@@ -204,9 +257,12 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/apspot-prod*:*:*"
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/apspot-dev*:*:*"
                           }
                         ]
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iam\"][\"role\"][\"statements\"][0]"
                       },
                       {
                         "Effect": "Allow",
@@ -228,7 +284,7 @@
                   "-",
                   [
                     "apspot",
-                    "prod",
+                    "dev",
                     {
                       "Ref": "AWS::Region"
                     },
@@ -245,11 +301,11 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/apspot/prod/1669432979415-2022-11-26T03:22:59.415Z/apspot.zip"
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
               },
               "Handler": "lambdas/spots_wwff.lambda_handler",
               "Runtime": "python3.9",
-              "FunctionName": "apspot-prod-spotswwff",
+              "FunctionName": "apspot-dev-spotswwff",
               "MemorySize": 128,
               "Timeout": 6,
               "TracingConfig": {
@@ -262,7 +318,10 @@
                   "pnp_api_user_key": "8B3E819BDB11",
                   "pota_api_url": "https://api.pota.app",
                   "pota_api_dev_url": "https://devapi.pota.app",
-                  "sota_api_url": "https://https://api2.sota.org.uk"
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
                 }
               },
               "Role": {
@@ -283,11 +342,11 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/apspot/prod/1669432979415-2022-11-26T03:22:59.415Z/apspot.zip"
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
               },
               "Handler": "lambdas/spots_sota.lambda_handler",
               "Runtime": "python3.9",
-              "FunctionName": "apspot-prod-spotssota",
+              "FunctionName": "apspot-dev-spotssota",
               "MemorySize": 128,
               "Timeout": 6,
               "TracingConfig": {
@@ -300,7 +359,10 @@
                   "pnp_api_user_key": "8B3E819BDB11",
                   "pota_api_url": "https://api.pota.app",
                   "pota_api_dev_url": "https://devapi.pota.app",
-                  "sota_api_url": "https://https://api2.sota.org.uk"
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
                 }
               },
               "Role": {
@@ -321,11 +383,11 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/apspot/prod/1669432979415-2022-11-26T03:22:59.415Z/apspot.zip"
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
               },
               "Handler": "lambdas/spots_siota.lambda_handler",
               "Runtime": "python3.9",
-              "FunctionName": "apspot-prod-spotssiota",
+              "FunctionName": "apspot-dev-spotssiota",
               "MemorySize": 128,
               "Timeout": 6,
               "TracingConfig": {
@@ -338,7 +400,10 @@
                   "pnp_api_user_key": "8B3E819BDB11",
                   "pota_api_url": "https://api.pota.app",
                   "pota_api_dev_url": "https://devapi.pota.app",
-                  "sota_api_url": "https://https://api2.sota.org.uk"
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
                 }
               },
               "Role": {
@@ -359,11 +424,11 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/apspot/prod/1669432979415-2022-11-26T03:22:59.415Z/apspot.zip"
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
               },
               "Handler": "lambdas/spots_pota.lambda_handler",
               "Runtime": "python3.9",
-              "FunctionName": "apspot-prod-spotspota",
+              "FunctionName": "apspot-dev-spotspota",
               "MemorySize": 128,
               "Timeout": 6,
               "TracingConfig": {
@@ -376,7 +441,10 @@
                   "pnp_api_user_key": "8B3E819BDB11",
                   "pota_api_url": "https://api.pota.app",
                   "pota_api_dev_url": "https://devapi.pota.app",
-                  "sota_api_url": "https://https://api2.sota.org.uk"
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
                 }
               },
               "Role": {
@@ -397,11 +465,11 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/apspot/prod/1669432979415-2022-11-26T03:22:59.415Z/apspot.zip"
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
               },
               "Handler": "lambdas/spot_pnp.lambda_handler",
               "Runtime": "python3.9",
-              "FunctionName": "apspot-prod-spotpnp",
+              "FunctionName": "apspot-dev-spotpnp",
               "MemorySize": 128,
               "Timeout": 6,
               "TracingConfig": {
@@ -414,7 +482,10 @@
                   "pnp_api_user_key": "8B3E819BDB11",
                   "pota_api_url": "https://api.pota.app",
                   "pota_api_dev_url": "https://devapi.pota.app",
-                  "sota_api_url": "https://https://api2.sota.org.uk"
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
                 }
               },
               "Role": {
@@ -435,11 +506,11 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/apspot/prod/1669432979415-2022-11-26T03:22:59.415Z/apspot.zip"
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
               },
               "Handler": "lambdas/spot_pota.lambda_handler",
               "Runtime": "python3.9",
-              "FunctionName": "apspot-prod-spotpota",
+              "FunctionName": "apspot-dev-spotpota",
               "MemorySize": 128,
               "Timeout": 6,
               "TracingConfig": {
@@ -452,7 +523,10 @@
                   "pnp_api_user_key": "8B3E819BDB11",
                   "pota_api_url": "https://api.pota.app",
                   "pota_api_dev_url": "https://devapi.pota.app",
-                  "sota_api_url": "https://https://api2.sota.org.uk"
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
                 }
               },
               "Role": {
@@ -466,64 +540,217 @@
               "SpotpotaLogGroup"
             ]
           },
-          "SpotswwffLambdaVersionUaxIoaAHRDgCWz4znWI1ZYeSuBmygTrzCRxBBmIcw": {
+          "SnssmsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
+              },
+              "Handler": "lambdas/sns_sms.lambda_handler",
+              "Runtime": "python3.9",
+              "FunctionName": "apspot-dev-snssms",
+              "MemorySize": 128,
+              "Timeout": 6,
+              "TracingConfig": {
+                "Mode": "Active"
+              },
+              "Environment": {
+                "Variables": {
+                  "pnp_api_url": "https://parksnpeaks.org/api",
+                  "pnp_api_user_id": "APSPOT",
+                  "pnp_api_user_key": "8B3E819BDB11",
+                  "pota_api_url": "https://api.pota.app",
+                  "pota_api_dev_url": "https://devapi.pota.app",
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "SnssmsLogGroup"
+            ]
+          },
+          "SearchpotaLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
+              },
+              "Handler": "lambdas/search_pota.lambda_handler",
+              "Runtime": "python3.9",
+              "FunctionName": "apspot-dev-searchpota",
+              "MemorySize": 128,
+              "Timeout": 6,
+              "TracingConfig": {
+                "Mode": "Active"
+              },
+              "Environment": {
+                "Variables": {
+                  "pnp_api_url": "https://parksnpeaks.org/api",
+                  "pnp_api_user_id": "APSPOT",
+                  "pnp_api_user_key": "8B3E819BDB11",
+                  "pota_api_url": "https://api.pota.app",
+                  "pota_api_dev_url": "https://devapi.pota.app",
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "SearchpotaLogGroup"
+            ]
+          },
+          "ProcessmessageLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z/apspot.zip"
+              },
+              "Handler": "lambdas/processmessage.lambda_handler",
+              "Runtime": "python3.9",
+              "FunctionName": "apspot-dev-processmessage",
+              "MemorySize": 128,
+              "Timeout": 6,
+              "TracingConfig": {
+                "Mode": "Active"
+              },
+              "Environment": {
+                "Variables": {
+                  "pnp_api_url": "https://parksnpeaks.org/api",
+                  "pnp_api_user_id": "APSPOT",
+                  "pnp_api_user_key": "8B3E819BDB11",
+                  "pota_api_url": "https://api.pota.app",
+                  "pota_api_dev_url": "https://devapi.pota.app",
+                  "sota_api_url": "https://https://api2.sota.org.uk",
+                  "APSPOTAPIURL": {
+                    "$ref": "$[\"service\"][\"provider\"][\"environment\"][\"APSPOTAPIURL\"]"
+                  }
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "ProcessmessageLogGroup"
+            ]
+          },
+          "SpotswwffLambdaVersion3ah5q25swOGFt9MNaWYg8yqs9nW3oB99jHMuEnJBs": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SpotswwffLambdaFunction"
               },
-              "CodeSha256": "XdRDa3zGoUpXmnnVgQ2S1MeBg/fWYBc2RcKOfCM4kr0="
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
             }
           },
-          "SpotssotaLambdaVersionduDnakMaVoi8yOqVS9YlFyCbX5fnISOfPiuNmLvo": {
+          "SpotssotaLambdaVersionXHQBv9FYXRaxJETZFfil5OfyjCGFV7lMb5MDmzllk": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SpotssotaLambdaFunction"
               },
-              "CodeSha256": "XdRDa3zGoUpXmnnVgQ2S1MeBg/fWYBc2RcKOfCM4kr0="
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
             }
           },
-          "SpotssiotaLambdaVersionIXLcMPYsmt9vK2fukvprwBKPmGbJ9wS3SPvOhoj5o5I": {
+          "SpotssiotaLambdaVersioni0Di71ca9poIILKTS0NckcTylOSWFm8Qef0YIjZ8BHM": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SpotssiotaLambdaFunction"
               },
-              "CodeSha256": "XdRDa3zGoUpXmnnVgQ2S1MeBg/fWYBc2RcKOfCM4kr0="
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
             }
           },
-          "SpotspotaLambdaVersionpHPMi6LUQ5coY6JZP8ffylchTusY8IDFdUL6y03ScBY": {
+          "SpotspotaLambdaVersionXdN4YZdUUZKvk5cOkJh75J9Jolek8AP9H6ykNaHzA": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SpotspotaLambdaFunction"
               },
-              "CodeSha256": "XdRDa3zGoUpXmnnVgQ2S1MeBg/fWYBc2RcKOfCM4kr0="
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
             }
           },
-          "SpotpnpLambdaVersionuzQLTkKW7AuxF6ZXZdbgwSXnQ3G5BWYAmApsh4Bps8": {
+          "SpotpnpLambdaVersionVzUynpxQ7lhHVH295co8lehPoJowEW0BCF2mFgy4": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SpotpnpLambdaFunction"
               },
-              "CodeSha256": "XdRDa3zGoUpXmnnVgQ2S1MeBg/fWYBc2RcKOfCM4kr0="
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
             }
           },
-          "SpotpotaLambdaVersionsx8QN6kYlhuyJvWrOiZ3eFZpqAe2k8P7mWdHJppXwhU": {
+          "SpotpotaLambdaVersionUJedUU8IH234lobbRhuf1r7gV0WJHARYKh1hixwRs": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SpotpotaLambdaFunction"
               },
-              "CodeSha256": "XdRDa3zGoUpXmnnVgQ2S1MeBg/fWYBc2RcKOfCM4kr0="
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
+            }
+          },
+          "SnssmsLambdaVersionGcJs4sgHZcJIgptFtdhV0obUH6pMuEKNMwJncyIY4": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "SnssmsLambdaFunction"
+              },
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
+            }
+          },
+          "SearchpotaLambdaVersionwEjUIhMR7tJA0SsUf8thXvMkd0f0bb9RVpQ7zbOBI": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "SearchpotaLambdaFunction"
+              },
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
+            }
+          },
+          "ProcessmessageLambdaVersion4FWGbXFnPSr1b3FFbRIdUlEac4Kot5WPH9AW10PLdD8": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "ProcessmessageLambdaFunction"
+              },
+              "CodeSha256": "AOTxDS0MzhKvMBx3Fx5ce7R61Qz2rCsG+yHZ1nhCDsI="
             }
           },
           "FargateTasksCluster": {
@@ -539,7 +766,7 @@
           "FargateTasksLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "apspotv2-prod",
+              "LogGroupName": "apspot-aprs",
               "Tags": []
             }
           },
@@ -589,18 +816,30 @@
                   }
                 ]
               },
-              "Policies": [],
+              "Policies": [
+                {
+                  "PolicyName": "FargateTaskPolicy",
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iam\"][\"role\"][\"statements\"][0]"
+                      }
+                    ]
+                  }
+                }
+              ],
               "ManagedPolicyArns": [],
               "Tags": []
             }
           },
-          "ApspotaprsprodTask": {
+          "ApspotaprsdevTask": {
             "Type": "AWS::ECS::TaskDefinition",
             "Properties": {
               "ContainerDefinitions": [
                 {
-                  "Name": "apspot-aprs-prod",
-                  "Image": "276800331103.dkr.ecr.ap-southeast-2.amazonaws.com/serverless-apspot-prod@sha256:e1bec2b6095181dc3f44afe25be249011ceb64d16fb530ee8ab29dd650e2b253",
+                  "Name": "apspot-aprs-dev",
+                  "Image": "276800331103.dkr.ecr.ap-southeast-2.amazonaws.com/serverless-apspot-dev@sha256:b24fdcaff20dff9f7323b73ec64a8418f01a32f101f5c7ef4ee1ea40290f6476",
                   "Environment": [
                     {
                       "Name": "pnp_api_url",
@@ -627,14 +866,6 @@
                       "Value": "https://https://api2.sota.org.uk"
                     },
                     {
-                      "Name": "CALLSIGN",
-                      "Value": "APSPOT"
-                    },
-                    {
-                      "Name": "PASSCODE",
-                      "Value": 11958
-                    },
-                    {
                       "Name": "APSPOTAPIURL",
                       "Value": {
                         "Fn::Join": [
@@ -655,6 +886,14 @@
                           ]
                         ]
                       }
+                    },
+                    {
+                      "Name": "CALLSIGN",
+                      "Value": "APSPO7"
+                    },
+                    {
+                      "Name": "PASSCODE",
+                      "Value": 11989
                     }
                   ],
                   "EntryPoint": [],
@@ -673,9 +912,9 @@
                   }
                 }
               ],
-              "Family": "apspot-aprs-prod",
+              "Family": "apspot-aprs-dev",
               "NetworkMode": "awsvpc",
-              "ExecutionRoleArn": "apspotv2prodexecutionrole",
+              "ExecutionRoleArn": "apspotv2-dev-executionrole",
               "TaskRoleArn": {
                 "Fn::Sub": "${FargateIamTaskRole}"
               },
@@ -687,13 +926,13 @@
               "Tags": []
             }
           },
-          "ApspotaprsprodService": {
+          "ApspotaprsdevService": {
             "Type": "AWS::ECS::Service",
             "Properties": {
               "Cluster": {
                 "Fn::Sub": "${FargateTasksCluster}"
               },
-              "ServiceName": "apspot-aprs-prod",
+              "ServiceName": "apspot-aprs-dev",
               "CapacityProviderStrategy": [
                 {
                   "CapacityProvider": "FARGATE",
@@ -706,14 +945,14 @@
                 "MinimumHealthyPercent": 100
               },
               "TaskDefinition": {
-                "Fn::Sub": "${ApspotaprsprodTask}"
+                "Fn::Sub": "${ApspotaprsdevTask}"
               },
               "NetworkConfiguration": {
                 "AwsvpcConfiguration": {
                   "AssignPublicIp": "ENABLED",
                   "SecurityGroups": [
                     {
-                      "Ref": "apspotv2prodsecuritygroup"
+                      "Ref": "apspotv2securitygroup"
                     }
                   ],
                   "Subnets": [
@@ -725,6 +964,33 @@
               },
               "PropagateTags": "TASK_DEFINITION",
               "Tags": []
+            }
+          },
+          "SnssmsSnsSubscriptionAPSPOTPinpointDev": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+              "TopicArn": "arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev",
+              "Protocol": "lambda",
+              "Endpoint": {
+                "Fn::GetAtt": [
+                  "SnssmsLambdaFunction",
+                  "Arn"
+                ]
+              }
+            }
+          },
+          "SnssmsLambdaPermissionAPSPOTPinpointDevSNS": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "SnssmsLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "sns.amazonaws.com",
+              "SourceArn": "arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev"
             }
           },
           "HttpApi": {
@@ -1173,17 +1439,159 @@
             },
             "DependsOn": "HttpApiIntegrationSpotpota"
           },
-          "apspotv2prodsecuritygroup": {
+          "SearchpotaLambdaPermissionHttpApi": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "SearchpotaLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "HttpApi"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "HttpApiIntegrationSearchpota": {
+            "Type": "AWS::ApiGatewayV2::Integration",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "IntegrationType": "AWS_PROXY",
+              "IntegrationUri": {
+                "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"SearchpotaLambdaPermissionHttpApi\"][\"Properties\"][\"FunctionName\"]"
+              },
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "HttpApiRouteGetSearchPota": {
+            "Type": "AWS::ApiGatewayV2::Route",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "RouteKey": "GET /search/pota",
+              "Target": {
+                "Fn::Join": [
+                  "/",
+                  [
+                    "integrations",
+                    {
+                      "Ref": "HttpApiIntegrationSearchpota"
+                    }
+                  ]
+                ]
+              }
+            },
+            "DependsOn": "HttpApiIntegrationSearchpota"
+          },
+          "ProcessmessageLambdaPermissionHttpApi": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "ProcessmessageLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "HttpApi"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "HttpApiIntegrationProcessmessage": {
+            "Type": "AWS::ApiGatewayV2::Integration",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "IntegrationType": "AWS_PROXY",
+              "IntegrationUri": {
+                "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ProcessmessageLambdaPermissionHttpApi\"][\"Properties\"][\"FunctionName\"]"
+              },
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "HttpApiRouteGetProcessmessage": {
+            "Type": "AWS::ApiGatewayV2::Route",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "RouteKey": "GET /processmessage",
+              "Target": {
+                "Fn::Join": [
+                  "/",
+                  [
+                    "integrations",
+                    {
+                      "Ref": "HttpApiIntegrationProcessmessage"
+                    }
+                  ]
+                ]
+              }
+            },
+            "DependsOn": "HttpApiIntegrationProcessmessage"
+          },
+          "apspotv2securitygroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
               "GroupDescription": "Security Group",
               "VpcId": "vpc-0129fb45f049ff482"
             }
           },
-          "apspotv2prodexecutionrole": {
+          "apspotv2executionrole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-              "RoleName": "apspotv2prodexecutionrole",
+              "RoleName": "apspotv2-dev-executionrole",
               "AssumeRolePolicyDocument": {
                 "Statement": [
                   {
@@ -1242,7 +1650,7 @@
                       {
                         "Effect": "Allow",
                         "Resource": [
-                          "arn:aws:ecr:ap-southeast-2:276800331103:repository/apspot-aprs-prod"
+                          "arn:aws:ecr:ap-southeast-2:276800331103:repository/apspot-aprs-dev"
                         ],
                         "Action": [
                           "ecr:BatchGetImage"
@@ -1275,77 +1683,104 @@
               "Ref": "ServerlessDeploymentBucket"
             },
             "Export": {
-              "Name": "sls-apspot-prod-ServerlessDeploymentBucketName"
+              "Name": "sls-apspot-dev-ServerlessDeploymentBucketName"
             }
           },
           "SpotswwffLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SpotswwffLambdaVersionUaxIoaAHRDgCWz4znWI1ZYeSuBmygTrzCRxBBmIcw"
+              "Ref": "SpotswwffLambdaVersion3ah5q25swOGFt9MNaWYg8yqs9nW3oB99jHMuEnJBs"
             },
             "Export": {
-              "Name": "sls-apspot-prod-SpotswwffLambdaFunctionQualifiedArn"
+              "Name": "sls-apspot-dev-SpotswwffLambdaFunctionQualifiedArn"
             }
           },
           "SpotssotaLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SpotssotaLambdaVersionduDnakMaVoi8yOqVS9YlFyCbX5fnISOfPiuNmLvo"
+              "Ref": "SpotssotaLambdaVersionXHQBv9FYXRaxJETZFfil5OfyjCGFV7lMb5MDmzllk"
             },
             "Export": {
-              "Name": "sls-apspot-prod-SpotssotaLambdaFunctionQualifiedArn"
+              "Name": "sls-apspot-dev-SpotssotaLambdaFunctionQualifiedArn"
             }
           },
           "SpotssiotaLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SpotssiotaLambdaVersionIXLcMPYsmt9vK2fukvprwBKPmGbJ9wS3SPvOhoj5o5I"
+              "Ref": "SpotssiotaLambdaVersioni0Di71ca9poIILKTS0NckcTylOSWFm8Qef0YIjZ8BHM"
             },
             "Export": {
-              "Name": "sls-apspot-prod-SpotssiotaLambdaFunctionQualifiedArn"
+              "Name": "sls-apspot-dev-SpotssiotaLambdaFunctionQualifiedArn"
             }
           },
           "SpotspotaLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SpotspotaLambdaVersionpHPMi6LUQ5coY6JZP8ffylchTusY8IDFdUL6y03ScBY"
+              "Ref": "SpotspotaLambdaVersionXdN4YZdUUZKvk5cOkJh75J9Jolek8AP9H6ykNaHzA"
             },
             "Export": {
-              "Name": "sls-apspot-prod-SpotspotaLambdaFunctionQualifiedArn"
+              "Name": "sls-apspot-dev-SpotspotaLambdaFunctionQualifiedArn"
             }
           },
           "SpotpnpLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SpotpnpLambdaVersionuzQLTkKW7AuxF6ZXZdbgwSXnQ3G5BWYAmApsh4Bps8"
+              "Ref": "SpotpnpLambdaVersionVzUynpxQ7lhHVH295co8lehPoJowEW0BCF2mFgy4"
             },
             "Export": {
-              "Name": "sls-apspot-prod-SpotpnpLambdaFunctionQualifiedArn"
+              "Name": "sls-apspot-dev-SpotpnpLambdaFunctionQualifiedArn"
             }
           },
           "SpotpotaLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SpotpotaLambdaVersionsx8QN6kYlhuyJvWrOiZ3eFZpqAe2k8P7mWdHJppXwhU"
+              "Ref": "SpotpotaLambdaVersionUJedUU8IH234lobbRhuf1r7gV0WJHARYKh1hixwRs"
             },
             "Export": {
-              "Name": "sls-apspot-prod-SpotpotaLambdaFunctionQualifiedArn"
+              "Name": "sls-apspot-dev-SpotpotaLambdaFunctionQualifiedArn"
             }
           },
-          "ApspotaprsprodTaskArn": {
+          "SnssmsLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ApspotaprsprodTask"
+              "Ref": "SnssmsLambdaVersionGcJs4sgHZcJIgptFtdhV0obUH6pMuEKNMwJncyIY4"
             },
             "Export": {
-              "Name": "sls-apspot-prod-ApspotaprsprodTaskArn"
+              "Name": "sls-apspot-dev-SnssmsLambdaFunctionQualifiedArn"
             }
           },
-          "ApspotaprsprodServiceArn": {
+          "SearchpotaLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ApspotaprsprodService"
+              "Ref": "SearchpotaLambdaVersionwEjUIhMR7tJA0SsUf8thXvMkd0f0bb9RVpQ7zbOBI"
             },
             "Export": {
-              "Name": "sls-apspot-prod-ApspotaprsprodServiceArn"
+              "Name": "sls-apspot-dev-SearchpotaLambdaFunctionQualifiedArn"
+            }
+          },
+          "ProcessmessageLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "ProcessmessageLambdaVersion4FWGbXFnPSr1b3FFbRIdUlEac4Kot5WPH9AW10PLdD8"
+            },
+            "Export": {
+              "Name": "sls-apspot-dev-ProcessmessageLambdaFunctionQualifiedArn"
+            }
+          },
+          "ApspotaprsdevTaskArn": {
+            "Value": {
+              "Ref": "ApspotaprsdevTask"
+            },
+            "Export": {
+              "Name": "sls-apspot-dev-ApspotaprsdevTaskArn"
+            }
+          },
+          "ApspotaprsdevServiceArn": {
+            "Value": {
+              "Ref": "ApspotaprsdevService"
+            },
+            "Export": {
+              "Name": "sls-apspot-dev-ApspotaprsdevServiceArn"
             }
           },
           "HttpApiId": {
@@ -1354,7 +1789,7 @@
               "Ref": "HttpApi"
             },
             "Export": {
-              "Name": "sls-apspot-prod-HttpApiId"
+              "Name": "sls-apspot-dev-HttpApiId"
             }
           },
           "HttpApiUrl": {
@@ -1379,7 +1814,7 @@
               ]
             },
             "Export": {
-              "Name": "sls-apspot-prod-HttpApiUrl"
+              "Name": "sls-apspot-dev-HttpApiUrl"
             }
           }
         }
@@ -1487,13 +1922,13 @@
             "resolvedPath": "/spots/wwff"
           }
         ],
-        "name": "apspot-prod-spotswwff",
+        "name": "apspot-dev-spotswwff",
         "package": {},
         "memory": 128,
         "timeout": 6,
         "runtime": "python3.9",
         "vpc": {},
-        "versionLogicalId": "SpotswwffLambdaVersionUaxIoaAHRDgCWz4znWI1ZYeSuBmygTrzCRxBBmIcw"
+        "versionLogicalId": "SpotswwffLambdaVersion3ah5q25swOGFt9MNaWYg8yqs9nW3oB99jHMuEnJBs"
       },
       "spotssota": {
         "handler": "lambdas/spots_sota.lambda_handler",
@@ -1508,13 +1943,13 @@
             "resolvedPath": "/spots/sota"
           }
         ],
-        "name": "apspot-prod-spotssota",
+        "name": "apspot-dev-spotssota",
         "package": {},
         "memory": 128,
         "timeout": 6,
         "runtime": "python3.9",
         "vpc": {},
-        "versionLogicalId": "SpotssotaLambdaVersionduDnakMaVoi8yOqVS9YlFyCbX5fnISOfPiuNmLvo"
+        "versionLogicalId": "SpotssotaLambdaVersionXHQBv9FYXRaxJETZFfil5OfyjCGFV7lMb5MDmzllk"
       },
       "spotssiota": {
         "handler": "lambdas/spots_siota.lambda_handler",
@@ -1529,13 +1964,13 @@
             "resolvedPath": "/spots/siota"
           }
         ],
-        "name": "apspot-prod-spotssiota",
+        "name": "apspot-dev-spotssiota",
         "package": {},
         "memory": 128,
         "timeout": 6,
         "runtime": "python3.9",
         "vpc": {},
-        "versionLogicalId": "SpotssiotaLambdaVersionIXLcMPYsmt9vK2fukvprwBKPmGbJ9wS3SPvOhoj5o5I"
+        "versionLogicalId": "SpotssiotaLambdaVersioni0Di71ca9poIILKTS0NckcTylOSWFm8Qef0YIjZ8BHM"
       },
       "spotspota": {
         "handler": "lambdas/spots_pota.lambda_handler",
@@ -1550,13 +1985,13 @@
             "resolvedPath": "/spots/pota"
           }
         ],
-        "name": "apspot-prod-spotspota",
+        "name": "apspot-dev-spotspota",
         "package": {},
         "memory": 128,
         "timeout": 6,
         "runtime": "python3.9",
         "vpc": {},
-        "versionLogicalId": "SpotspotaLambdaVersionpHPMi6LUQ5coY6JZP8ffylchTusY8IDFdUL6y03ScBY"
+        "versionLogicalId": "SpotspotaLambdaVersionXdN4YZdUUZKvk5cOkJh75J9Jolek8AP9H6ykNaHzA"
       },
       "spotpnp": {
         "handler": "lambdas/spot_pnp.lambda_handler",
@@ -1571,13 +2006,13 @@
             "resolvedPath": "/spot/pnp"
           }
         ],
-        "name": "apspot-prod-spotpnp",
+        "name": "apspot-dev-spotpnp",
         "package": {},
         "memory": 128,
         "timeout": 6,
         "runtime": "python3.9",
         "vpc": {},
-        "versionLogicalId": "SpotpnpLambdaVersionuzQLTkKW7AuxF6ZXZdbgwSXnQ3G5BWYAmApsh4Bps8"
+        "versionLogicalId": "SpotpnpLambdaVersionVzUynpxQ7lhHVH295co8lehPoJowEW0BCF2mFgy4"
       },
       "spotpota": {
         "handler": "lambdas/spot_pota.lambda_handler",
@@ -1592,28 +2027,89 @@
             "resolvedPath": "/spot/pota"
           }
         ],
-        "name": "apspot-prod-spotpota",
+        "name": "apspot-dev-spotpota",
         "package": {},
         "memory": 128,
         "timeout": 6,
         "runtime": "python3.9",
         "vpc": {},
-        "versionLogicalId": "SpotpotaLambdaVersionsx8QN6kYlhuyJvWrOiZ3eFZpqAe2k8P7mWdHJppXwhU"
+        "versionLogicalId": "SpotpotaLambdaVersionUJedUU8IH234lobbRhuf1r7gV0WJHARYKh1hixwRs"
+      },
+      "snssms": {
+        "handler": "lambdas/sns_sms.lambda_handler",
+        "memorySize": 128,
+        "events": [
+          {
+            "sns": {
+              "arn": "arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev",
+              "topicName": "APSPOT-Pinpoint-Dev"
+            }
+          }
+        ],
+        "name": "apspot-dev-snssms",
+        "package": {},
+        "memory": 128,
+        "timeout": 6,
+        "runtime": "python3.9",
+        "vpc": {},
+        "versionLogicalId": "SnssmsLambdaVersionGcJs4sgHZcJIgptFtdhV0obUH6pMuEKNMwJncyIY4"
+      },
+      "searchpota": {
+        "handler": "lambdas/search_pota.lambda_handler",
+        "memorySize": 128,
+        "events": [
+          {
+            "httpApi": {
+              "method": "GET",
+              "path": "/search/pota"
+            },
+            "resolvedMethod": "GET",
+            "resolvedPath": "/search/pota"
+          }
+        ],
+        "name": "apspot-dev-searchpota",
+        "package": {},
+        "memory": 128,
+        "timeout": 6,
+        "runtime": "python3.9",
+        "vpc": {},
+        "versionLogicalId": "SearchpotaLambdaVersionwEjUIhMR7tJA0SsUf8thXvMkd0f0bb9RVpQ7zbOBI"
+      },
+      "processmessage": {
+        "handler": "lambdas/processmessage.lambda_handler",
+        "memorySize": 128,
+        "events": [
+          {
+            "httpApi": {
+              "method": "GET",
+              "path": "/processmessage"
+            },
+            "resolvedMethod": "GET",
+            "resolvedPath": "/processmessage"
+          }
+        ],
+        "name": "apspot-dev-processmessage",
+        "package": {},
+        "memory": 128,
+        "timeout": 6,
+        "runtime": "python3.9",
+        "vpc": {},
+        "versionLogicalId": "ProcessmessageLambdaVersion4FWGbXFnPSr1b3FFbRIdUlEac4Kot5WPH9AW10PLdD8"
       }
     },
     "resources": {
       "Resources": {
-        "apspotv2prodsecuritygroup": {
+        "apspotv2securitygroup": {
           "Type": "AWS::EC2::SecurityGroup",
           "Properties": {
             "GroupDescription": "Security Group",
             "VpcId": "vpc-0129fb45f049ff482"
           }
         },
-        "apspotv2prodexecutionrole": {
+        "apspotv2executionrole": {
           "Type": "AWS::IAM::Role",
           "Properties": {
-            "RoleName": "apspotv2prodexecutionrole",
+            "RoleName": "apspotv2-dev-executionrole",
             "AssumeRolePolicyDocument": {
               "Statement": [
                 {
@@ -1672,7 +2168,7 @@
                     {
                       "Effect": "Allow",
                       "Resource": [
-                        "arn:aws:ecr:ap-southeast-2:276800331103:repository/apspot-aprs-prod"
+                        "arn:aws:ecr:ap-southeast-2:276800331103:repository/apspot-aprs-dev"
                       ],
                       "Action": [
                         "ecr:BatchGetImage"
@@ -1715,27 +2211,27 @@
         "memory": "0.5GB",
         "cpu": 256,
         "environment": {
-          "CALLSIGN": "APSPOT",
-          "PASSCODE": 11958,
+          "CALLSIGN": "APSPO7",
+          "PASSCODE": 11989,
           "APSPOTAPIURL": {
-            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ApspotaprsprodTask\"][\"Properties\"][\"ContainerDefinitions\"][0][\"Environment\"][8][\"Value\"]"
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ApspotaprsdevTask\"][\"Properties\"][\"ContainerDefinitions\"][0][\"Environment\"][6][\"Value\"]"
           }
         },
-        "logGroupName": "apspotv2-prod",
-        "executionRoleArn": "apspotv2prodexecutionrole",
+        "logGroupName": "apspot-aprs",
+        "executionRoleArn": "apspotv2-dev-executionrole",
         "vpc": {
           "securityGroupIds": {
-            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ApspotaprsprodService\"][\"Properties\"][\"NetworkConfiguration\"][\"AwsvpcConfiguration\"][\"SecurityGroups\"]"
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ApspotaprsdevService\"][\"Properties\"][\"NetworkConfiguration\"][\"AwsvpcConfiguration\"][\"SecurityGroups\"]"
           },
           "subnetIds": {
-            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ApspotaprsprodService\"][\"Properties\"][\"NetworkConfiguration\"][\"AwsvpcConfiguration\"][\"Subnets\"]"
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ApspotaprsdevService\"][\"Properties\"][\"NetworkConfiguration\"][\"AwsvpcConfiguration\"][\"Subnets\"]"
           },
           "assignPublicIp": true
         },
         "tasks": {
           "apspot-aprs": {
-            "name": "apspot-aprs-prod",
-            "image": "apspot-aprs-prod",
+            "name": "apspot-aprs-dev",
+            "image": "apspot-aprs",
             "service": {
               "desiredCount": 1
             }
@@ -1758,7 +2254,7 @@
     "artifact": "/Users/zindello/repositories/zindello-gitlab/apspot/.serverless/apspot.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/apspot/prod/1669432979415-2022-11-26T03:22:59.415Z",
+    "artifactDirectoryName": "serverless/apspot/dev/1669517895173-2022-11-27T02:58:15.173Z",
     "artifact": "apspot.zip"
   }
 }

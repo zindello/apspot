@@ -1,2 +1,4 @@
 requests
 cachetools
+fuzzywuzzy
+python-Levenshtein

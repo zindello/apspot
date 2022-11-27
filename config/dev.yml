@@ -1,0 +1,17 @@
+environment:
+  pnp_api_url: 'https://parksnpeaks.org/api'
+  pnp_api_user_id: 'APSPOT'
+  pnp_api_user_key: '8B3E819BDB11'
+  pota_api_url: 'https://api.pota.app'
+  pota_api_dev_url: 'https://devapi.pota.app'
+  sota_api_url: 'https://https://api2.sota.org.uk'
+  APSPOTAPIURL:
+    Fn::Join: ["", [ "https://", !Ref HttpApi, ".execute-api.", !Ref AWS::Region, "." , !Ref AWS::URLSuffix]]
+
+
+fargate_environment:
+  CALLSIGN: APSPO7
+  PASSCODE: 11989
+  APSPOTAPIURL:
+    Fn::Join: ["", [ "https://", !Ref HttpApi, ".execute-api.", !Ref AWS::Region, "." , !Ref AWS::URLSuffix]]
+  

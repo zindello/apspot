@@ -47,7 +47,7 @@ def sendpotaspot(actcallsign, actsite, actmode, actfreq, actcomment):
     spotpayload = {"activator": actcallsign, "spotter": actcallsign, "frequency": str(float(actfreq) * 1000), "reference": actsite, "mode": actmode, "source": "APSPOT-APRS", "comments": actcomment }
     logging.info("Sending " + json.dumps(spotpayload))
     response = []
-    if "APTEST" not in actcomment:
+    if "APTEST" not in actcomment.upper():
         debug = False
         spot = requests.post(pota_api_url + "/spot", json=spotpayload)
     else:

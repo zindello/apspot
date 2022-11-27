@@ -98,7 +98,7 @@ def validatepota_pnp(ref):
 def sendpnpspot(actclass, actcallsign, actsite, actmode, actfreq, actcomment):
     spotpayload = {"actClass": actclass,"actCallsign": actcallsign,"actSite": actsite,"mode":actmode,"freq":actfreq,"comments": actcomment,"userID": pnp_api_user_id,"APIKey": pnp_api_user_key}
     print("Sending " + json.dumps(spotpayload))
-    if "APTEST" not in actcomment:
+    if "APTEST" not in actcomment.upper():
         debug = False
         spot = requests.post(pnp_api_url + "/SPOT", json=spotpayload, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "content-type" : "application/json"})
     else:
