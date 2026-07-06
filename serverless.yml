@@ -18,39 +18,12 @@ provider:
     name: apspot
     metrics: true
   environment: ${file(./config/${opt:stage}.yml):environment}
-  ecr:
-    images:
-      apspot-aprs:
-        path: ./fargate/
-        file: DockerfileAPSPOT
-        platform: linux/amd64
   iam:
     role:
       statements:
         - Effect: Allow
           Action: 'sns:Publish'
           Resource: "*"
-
-fargate:
-  memory: '0.5GB'
-  cpu: 256
-  environment: ${file(./config/${opt:stage}.yml):fargate_environment}
-  logGroupName: apspot-aprs
-  executionRoleArn: apspotv2-${opt:stage}-executionrole
-  vpc:
-    securityGroupIds:
-      - !Ref apspotv2securitygroup
-    subnetIds:
-      - subnet-00c92e2dc4d011de0
-      - subnet-087babeeccbd7aed1
-      - subnet-0161f2654d1a95ac3
-    assignPublicIp: true
-  tasks:
-    apspot-aprs:
-      name: apspot-aprs-${opt:stage}
-      image: apspot-aprs
-      service:
-        desiredCount: 1
 
 functions:
   spotswwff:
@@ -118,71 +91,5 @@ functions:
           path: /processmessage
 
 
-resources:
-  Resources:
-    apspotv2securitygroup:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        GroupDescription: "Security Group"
-        VpcId: "vpc-0129fb45f049ff482"
-
-    apspotv2executionrole:
-      Type: AWS::IAM::Role
-      Properties:
-        RoleName: apspotv2-${opt:stage}-executionrole
-        AssumeRolePolicyDocument:
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - ecs-tasks.amazonaws.com
-              Action:
-                - "sts:AssumeRole"
-        Path: "/"
-        Policies:
-          - PolicyName: "ContainerRolePolicy"
-            PolicyDocument:
-              Statement:
-                - Action:
-                    - logs:CreateLogGroup
-                    - logs:DescribeLogGroups
-                    - logs:PutRetentionPolicy
-                    - logs:CreateLogStream
-                    - logs:DescribeLogStreams
-                    - logs:PutLogEvents
-                  Effect: "Allow"
-                  Resource:
-                    - "*"
-                - Effect: Allow
-                  Action:
-                    - cloudwatch:DeleteAlarms
-                    - cloudwatch:DescribeAlarms
-                    - cloudwatch:PutMetricAlarm
-                  Resource: 
-                  - arn:aws:cloudwatch:*:*:alarm:*
-                - Effect: Allow
-                  Resource: 
-                    "*"
-                  Action:
-                    - "ec2:CreateNetworkInterface"
-                    - "ec2:DescribeNetworkInterfaces"
-                    - "ec2:DeleteNetworkInterface"
-                - Effect: Allow
-                  Resource:
-                    - "arn:aws:ecr:ap-southeast-2:276800331103:repository/apspot-aprs-${opt:stage}"
-                  Action:
-                    - "ecr:BatchGetImage"
-                - Effect: Allow
-                  Resource:
-                    - "*"
-                  Action:
-                    - "ecr:DescribeImages"
-                    - "ecr:DescribeRepositories"
-                    - "ecr:GetAuthorizationToken"
-                    - "ecr:BatchCheckLayerAvailability"
-                    - "ecr:GetDownloadUrlForLayer"
-                    - "ecr:BatchGetImage"
-
 plugins:
   - serverless-python-requirements
-  - serverless-fargate

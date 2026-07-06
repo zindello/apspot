@@ -1,0 +1,45 @@
+name: Build APRS Gateway Container
+
+# Builds the apspot-aprs container in-house (migrated off AWS Fargate) and
+# triggers a redeploy of the stacks/apspot-aprs Swarm service in the
+# zindello/internal-server repo, which owns the compose definition.
+#
+# Runs only on the zindello/apspot self-hosted runner (runner-apspot in
+# internal-server's github-runner stack) — never on GitHub-hosted runners,
+# so the image is always built on the target server and never pushed to
+# any registry.
+
+on:
+  push:
+    branches:
+      - apspotv2
+    paths:
+      - "fargate/**"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build image
+        run: docker build -f fargate/DockerfileAPSPOT -t apspot-aprs:latest fargate/
+
+      - name: Redeploy apspot-aprs stack
+        run: |
+          stack_id=$(curl -sk -H "X-API-Key: ${{ secrets.PORTAINER_API_KEY }}" \
+            "${{ secrets.PORTAINER_URL }}/api/stacks" \
+            | jq -r '.[] | select(.Name == "apspot-aprs") | .Id')
+          if [[ -z "$stack_id" ]]; then
+            echo "apspot-aprs stack not found in Portainer yet — deploy it from internal-server first"
+            exit 1
+          fi
+          response=$(curl -sk -X PUT \
+            -H "X-API-Key: ${{ secrets.PORTAINER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.PORTAINER_URL }}/api/stacks/${stack_id}/git/redeploy?endpointId=${{ secrets.PORTAINER_ENDPOINT_ID }}" \
+            -d "{\"pullImage\":false,\"prune\":false,\"repositoryAuthentication\":true,\"repositoryUsername\":\"${{ secrets.GIT_USERNAME }}\",\"repositoryPassword\":\"${{ secrets.GIT_TOKEN }}\"}")
+          echo "Response: $response"
+          echo "$response" | jq -e '.Id' > /dev/null || { echo "Deploy failed"; exit 1; }
+          docker service update --force apspot-aprs_apspot-aprs

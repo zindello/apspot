@@ -6,7 +6,3 @@ environment:
   pota_api_dev_url: 'https://devapi.pota.app'
   sota_api_url: 'https://https://api2.sota.org.uk'
   APSPOTAPIURL: "https://qs3v66a0vk.execute-api.ap-southeast-2.amazonaws.com/"
-
-fargate_environment:
-  CALLSIGN: APSPO7
-  PASSCODE: 11989

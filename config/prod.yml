@@ -7,11 +7,3 @@ environment:
   sota_api_url: 'https://https://api2.sota.org.uk'
   APSPOTAPIURL:
     Fn::Join: ["", [ "https://", !Ref HttpApi, ".execute-api.", !Ref AWS::Region, "." , !Ref AWS::URLSuffix]]
-
-
-fargate_environment:
-  CALLSIGN: APSPOT
-  PASSCODE: 11958
-  APSPOTAPIURL:
-    Fn::Join: ["", [ "https://", !Ref HttpApi, ".execute-api.", !Ref AWS::Region, "." , !Ref AWS::URLSuffix]]
-  
