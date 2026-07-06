@@ -2,7 +2,7 @@ APRS Daemon - runs in-house on zindello-server (migrated off AWS Fargate)
 
 Monitors APRS-IS for incoming messages and calls API. Handles sending messages back to APRS-IS.
 
-Built and deployed via `.github/workflows/build-aprs-gateway.yml` on pushes to `fargate/**` —
+Built and deployed via `.github/workflows/build-aprs-gateway.yml` on pushes to `docker/**` —
 see `zindello/internal-server`'s `stacks/apspot-aprs/` for the Swarm stack definition.
 
 

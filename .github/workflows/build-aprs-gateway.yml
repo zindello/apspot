@@ -14,7 +14,7 @@ on:
     branches:
       - apspotv2
     paths:
-      - "fargate/**"
+      - "docker/**"
   workflow_dispatch:
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Build image
-        run: docker build -f fargate/DockerfileAPSPOT -t apspot-aprs:latest fargate/
+        run: docker build -f docker/DockerfileAPSPOT -t apspot-aprs:latest docker/
 
       - name: Redeploy apspot-aprs stack
         run: |
