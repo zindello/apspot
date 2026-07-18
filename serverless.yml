@@ -76,11 +76,8 @@ functions:
     memorySize: 128
     events:
       - sns:
-          arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev
-          topicName: APSPOT-Pinpoint-Dev
-  # SES receipt -> SNS -> this lambda is wired manually (cross-region source),
-  # so no event is declared here. Add the SNS subscription + lambda permission
-  # by hand after deploy.
+          arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod
+          topicName: APSPOT-Pinpoint-Prod
   snsemail:
     handler: lambdas/sns_email.lambda_handler
     memorySize: 128
@@ -116,3 +113,12 @@ resources:
         Action: lambda:InvokeFunction
         Principal: sns.amazonaws.com
         SourceArn: arn:aws:sns:us-east-1:276800331103:APSPOT-prod-SES
+    # Allow the prod Pinpoint SMS SNS topic to invoke the snssms lambda.
+    SnssmsPinpointProdInvokePermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Fn::GetAtt: [SnssmsLambdaFunction, Arn]
+        Action: lambda:InvokeFunction
+        Principal: sns.amazonaws.com
+        SourceArn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod
