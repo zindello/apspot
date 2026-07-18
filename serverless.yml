@@ -24,6 +24,9 @@ provider:
         - Effect: Allow
           Action: 'sns:Publish'
           Resource: "*"
+        - Effect: Allow
+          Action: 'ses:SendEmail'
+          Resource: "*"
 
 functions:
   spotswwff:
@@ -75,6 +78,12 @@ functions:
       - sns:
           arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev
           topicName: APSPOT-Pinpoint-Dev
+  # SES receipt -> SNS -> this lambda is wired manually (cross-region source),
+  # so no event is declared here. Add the SNS subscription + lambda permission
+  # by hand after deploy.
+  snsemail:
+    handler: lambdas/sns_email.lambda_handler
+    memorySize: 128
   searchpota:
     handler: lambdas/search_pota.lambda_handler
     memorySize: 128
@@ -93,3 +102,17 @@ functions:
 
 plugins:
   - serverless-python-requirements
+
+resources:
+  Resources:
+    # Allow the cross-region (us-east-1) SES email SNS topic to invoke the
+    # snsemail lambda. The subscription itself is created manually in us-east-1;
+    # this resource-based policy is what stops the AccessDeniedException.
+    SnsemailUsEast1InvokePermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Fn::GetAtt: [SnsemailLambdaFunction, Arn]
+        Action: lambda:InvokeFunction
+        Principal: sns.amazonaws.com
+        SourceArn: arn:aws:sns:us-east-1:276800331103:APSPOT-prod-SES
