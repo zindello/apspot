@@ -6,3 +6,6 @@ environment:
   pota_api_dev_url: 'https://devapi.pota.app'
   sota_api_url: 'https://https://api2.sota.org.uk'
   APSPOTAPIURL: "https://qs3v66a0vk.execute-api.ap-southeast-2.amazonaws.com/"
+sns_sms_topic_arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev
+sns_sms_topic_name: APSPOT-Pinpoint-Dev
+sns_email_topic_arn: arn:aws:sns:us-east-1:276800331103:APSPOT-dev-SES
