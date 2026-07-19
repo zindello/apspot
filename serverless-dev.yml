@@ -1,0 +1,74 @@
+service: apspot
+
+frameworkVersion: '3'
+configValidationMode: warn
+deprecationNotificationMode: warn:summary
+
+
+provider:
+  name: aws
+  stage: dev
+  region: ap-southeast-2
+  tracing:
+    apiGateway: true
+    lambda: true
+  runtime: python3.9
+  logRetentionInDays: 14
+  httpApi:
+    name: apspot
+    metrics: true
+  environment:
+    pnp_api_url: 'https://parksnpeaks.org/api'
+    pnp_api_user_id: 'APSPOT'
+    pnp_api_user_key: '8B3E819BDB11'
+    pota_api_url: 'https://api.pota.app'
+    pota_api_dev_url: 'https://devapi.pota.app'
+    sota_api_url: 'https://https://api2.sota.org.uk'
+
+functions:
+  spotswwff:
+    handler: lambdas/spots_wwff.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/wwff
+  spotssota:
+    handler: lambdas/spots_sota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/sota
+  spotssiota:
+    handler: lambdas/spots_siota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/siota
+  spotspota:
+    handler: lambdas/spots_pota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/pota
+  spotpnp:
+    handler: lambdas/spot_pnp.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spot/pnp
+  spotpota:
+    handler: lambdas/spot_pota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spot/pota
+
+
+plugins:
+  - serverless-python-requirements

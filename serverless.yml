@@ -1,0 +1,124 @@
+service: apspot
+
+frameworkVersion: '3'
+configValidationMode: warn
+deprecationNotificationMode: warn:summary
+
+
+provider:
+  name: aws
+  stage: ${opt:stage}-
+  region: ap-southeast-2
+  tracing:
+    apiGateway: true
+    lambda: true
+  runtime: python3.9
+  logRetentionInDays: 14
+  httpApi:
+    name: apspot
+    metrics: true
+  environment: ${file(./config/${opt:stage}.yml):environment}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: 'sns:Publish'
+          Resource: "*"
+        - Effect: Allow
+          Action: 'ses:SendEmail'
+          Resource: "*"
+
+functions:
+  spotswwff:
+    handler: lambdas/spots_wwff.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/wwff
+  spotssota:
+    handler: lambdas/spots_sota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/sota
+  spotssiota:
+    handler: lambdas/spots_siota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/siota
+  spotspota:
+    handler: lambdas/spots_pota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spots/pota
+  spotpnp:
+    handler: lambdas/spot_pnp.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spot/pnp
+  spotpota:
+    handler: lambdas/spot_pota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spot/pota
+  snssms:
+    handler: lambdas/sns_sms.lambda_handler
+    memorySize: 128
+    events:
+      - sns:
+          arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod
+          topicName: APSPOT-Pinpoint-Prod
+  snsemail:
+    handler: lambdas/sns_email.lambda_handler
+    memorySize: 128
+  searchpota:
+    handler: lambdas/search_pota.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /search/pota
+  processmessage:
+    handler: lambdas/processmessage.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /processmessage
+
+
+plugins:
+  - serverless-python-requirements
+
+resources:
+  Resources:
+    # Allow the cross-region (us-east-1) SES email SNS topic to invoke the
+    # snsemail lambda. The subscription itself is created manually in us-east-1;
+    # this resource-based policy is what stops the AccessDeniedException.
+    SnsemailUsEast1InvokePermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Fn::GetAtt: [SnsemailLambdaFunction, Arn]
+        Action: lambda:InvokeFunction
+        Principal: sns.amazonaws.com
+        SourceArn: arn:aws:sns:us-east-1:276800331103:APSPOT-prod-SES
+    # Allow the prod Pinpoint SMS SNS topic to invoke the snssms lambda.
+    SnssmsPinpointProdInvokePermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Fn::GetAtt: [SnssmsLambdaFunction, Arn]
+        Action: lambda:InvokeFunction
+        Principal: sns.amazonaws.com
+        SourceArn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod

@@ -13,9 +13,13 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
 
-cache = cachetools.TTLCache(10000, ttl=172800)
-
 messageNo = 0
+messageDelay = 1.5
+retryAttempts = 5
+
+messageCache = cachetools.TTLCache(maxsize=99999, ttl=172800)
+ackCache = cachetools.TTLCache(maxsize=99999, ttl=(60 * (retryAttempts + 1)))
+
 
 CALLSIGN = os.getenv('CALLSIGN')
 PASSCODE = os.getenv('PASSCODE')
@@ -60,6 +64,7 @@ def isfloat(num):
         return True
     except ValueError:
         return False
+        
 def getcomment(spotinfo):
     try:
         return ' '.join(spotinfo[5:]) + "[APSPOT]"
@@ -75,12 +80,32 @@ def extract_potaid(json):
         return 0
 
 def sendmessage(message, destination):
+    messagethread = threading.Thread(target=sendmessagethread, args=[message,destination])
+    messagethread.start()
+
+def sendmessagethread(message,destination):
     global messageNo
-    if messageNo == 999: messageNo = 0
+    global ackCache
+    global retryAttempts
+    if messageNo == 99999: messageNo = 0
     messageNo += 1
-    RESPONSEMESSAGE = CALLSIGN + '>' + destination + ',TCPIP::' + "{:<9}".format(destination) + ':' + message + '{' + str(messageNo).zfill(4)
+    RESPONSEMESSAGE = CALLSIGN + '>' + destination + ',TCPIP::' + "{:<9}".format(destination) + ':' + message + '{' + str(messageNo).zfill(5)
     logging.info('Sending response to APRS User ' + RESPONSEMESSAGE)
     AIS.sendall(RESPONSEMESSAGE)
+    ackCache[str(messageNo).zfill(5)] = False
+    logging.info('Waiting for Ack for message ' + str(messageNo).zfill(5))
+    time.sleep(60)
+    messageAttempts = 1
+    logging.info('Checking for Ack for message ' + str(messageNo).zfill(5))
+    while (ackCache[str(messageNo).zfill(5)] == False) and (messageAttempts < retryAttempts):
+        messageAttempts += 1
+        logging.info('No Ack received for message ' + str(messageNo).zfill(5) + ' ... Retrying, Attempt: ' + str(messageAttempts))
+        AIS.sendall(RESPONSEMESSAGE)
+        time.sleep(60)
+    if ackCache[str(messageNo).zfill(5)] == False:
+        logging.info('No ack received after 5 attempts for message ' + str(messageNo).zfill(5) + ', exiting')
+    else:
+        logging.info('Ack received for message ' + str(messageNo).zfill(5) + ' after ' + str(messageAttempts) + ' Attempts')
 
 def sendack(destination, msgNo):
     ACK = CALLSIGN + '>' + destination + ',TCPIP::' + "{:<9}".format(destination) + ':ack' + msgNo
@@ -101,9 +126,11 @@ def sendstatus():
 def sendusage(message, destination):
     try:
         for usagemessage in USAGESTRING[message]:
+            time.sleep(messageDelay)
             sendmessage(usagemessage, destination)
     except:
         sendmessage("ERROR: \"" + message + "\" NOT SUPPORTED", destination)
+        time.sleep(messageDelay)
         sendmessage("SEND \"USAGE\" FOR MORE INFO", destination)
 
 def validatecall_pnp(callsign):
@@ -340,9 +367,9 @@ def processwwff_pnp(spotinfo, fromcallsign):
         return callcheck
 
 def processpot(message, fromcallsign):
-    global cache
-    if message not in cache.get(hash(fromcallsign + message), ""):
-        cache[hash(fromcallsign + message)] = message
+    global messageCache
+    if message not in messageCache.get(hash(fromcallsign + message), ""):
+        messageCache[hash(fromcallsign + message)] = message
         spotinfo = message.split()
         friendlycallsign = fromcallsign.split('-')[0]
         logging.info('Determining Class')
@@ -356,6 +383,7 @@ def processpot(message, fromcallsign):
             case 'POTA':
                 if 'VK' in message.split()[2]:
                     sendmessage(processpota_pnp(spotinfo, friendlycallsign), fromcallsign)
+                    time.sleep(messageDelay)
                 sendmessage(processpota_potaapp(spotinfo, friendlycallsign), fromcallsign)
             case _:
                 logging.info('ERROR: NO SUPPORT FOR ' + spotinfo[1] + ' YET. CHECK WITH VK2MES FOR UPDATES')
@@ -384,6 +412,7 @@ def sendspots(message, fromcallsign):
                     else:
                         for index, spot in zip(range(3), sotaspots):
                             sendmessage('SPOT ' + str(index + 1) + ': ' + spot['actCallsign'] + ' | ' + spot['actSiteID'] + ' | ' + spot['actFreq'] + ' | ' + spot['actMode'], fromcallsign)
+                            time.sleep(messageDelay)
                 else:
                     logging.info('ERROR: No Response from PNP Server for SOTA Spots')
                     sendmessage('ERROR: No Response from PNP Server for SOTA Spots', fromcallsign)
@@ -398,6 +427,7 @@ def sendspots(message, fromcallsign):
                     else:
                         for index, spot in zip(range(3), json.loads(spots.text)):
                             sendmessage('SPOT ' + str(index + 1) + ': ' + spot['actCallsign'] + ' | ' + spot['WWFFid'] + ' | ' + spot['actFreq'] + ' | ' + spot['actMode'], fromcallsign)
+                            time.sleep(messageDelay)
                 else:
                     sendmessage('ERROR: No Response from PNP Server for WWFF Spots', fromcallsign)
             case 'SIOTA':
@@ -413,6 +443,7 @@ def sendspots(message, fromcallsign):
                     logging.debug(potaspots)
                     for index, spot in zip(range(3), potaspots):
                         sendmessage('SPOT ' + str(index + 1) + ': ' + spot['activator'] + ' | ' + spot['reference'] + ' | ' + spot['frequency'] + ' | ' + spot['mode'], fromcallsign)
+                        time.sleep(messageDelay)
                 else:
                     sendmessage("ERROR: No response from POTA server", fromcallsign)
             case _:
@@ -428,7 +459,7 @@ def incomingMessage(packet):
         logging.info('We have a message so send an ack')
         if message.get('msgNo'):
             sendack(message['from'], message['msgNo'])
-            time.sleep(0.5)
+            time.sleep(messageDelay)
         messagetext = message['message_text'].upper()
         if messagetext.startswith("!"):    
             logging.info('Now we need to see if we got a valid SPOT message')
@@ -443,8 +474,12 @@ def incomingMessage(packet):
             logging.info('Got a request for ' + messagetext)
             sendspots(message['message_text'].upper(), message['from'])
         else:
-            logging.info('Got an invalid request, sending usage information')
+            logging.info('Sending usage information')
             sendusage(message['message_text'].upper(), message['from'])
+    elif message.get('response') == 'ack':
+        global ackCache
+        logging.info('Got an ack for message ' + message.get('msgNo'))
+        ackCache[message.get('msgNo')] = True
     else:
         logging.info("Not an valid message. Dropping")
 

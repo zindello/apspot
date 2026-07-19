@@ -1,3 +1,4 @@
-aprslib
 requests
 cachetools
+fuzzywuzzy
+python-Levenshtein
