@@ -29,6 +29,6 @@ jobs:
           python-version: "3.9"
       - run: npm install
       - name: Configure AWS credentials
-        run: npx serverless config credentials --stage dev --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: npx serverless config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Deploy serverless stack
         run: npx serverless deploy --stage dev
