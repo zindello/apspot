@@ -6,4 +6,7 @@ environment:
   pota_api_dev_url: 'https://devapi.pota.app'
   sota_api_url: 'https://https://api2.sota.org.uk'
   APSPOTAPIURL:
-    Fn::Join: ["", [ "https://", !Ref HttpApi, ".execute-api.", !Ref AWS::Region, "." , !Ref AWS::URLSuffix]]
+    Fn::Join: [ "", [ "https://", !Ref HttpApi, ".execute-api.", !Ref AWS::Region, "." , !Ref AWS::URLSuffix]]
+sns_sms_topic_arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev
+sns_sms_topic_name: APSPOT-Pinpoint-Dev
+sns_email_topic_arn: arn:aws:sns:us-east-1:276800331103:APSPOT-dev-SES
