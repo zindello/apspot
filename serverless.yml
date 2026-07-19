@@ -5,6 +5,9 @@ configValidationMode: warn
 deprecationNotificationMode: warn:summary
 
 
+custom:
+  config: ${file(./config/${opt:stage}.yml)}
+
 provider:
   name: aws
   stage: ${opt:stage}-
@@ -76,11 +79,18 @@ functions:
     memorySize: 128
     events:
       - sns:
-          arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod
-          topicName: APSPOT-Pinpoint-Prod
+          arn: ${self:custom.config.smsTopicArn}
+          topicName: ${self:custom.config.smsTopicName}
   snsemail:
     handler: lambdas/sns_email.lambda_handler
     memorySize: 128
+  spottiles:
+    handler: lambdas/spot_tiles.lambda_handler
+    memorySize: 128
+    events:
+      - httpApi:
+          method: GET
+          path: /spot/tiles
   searchpota:
     handler: lambdas/search_pota.lambda_handler
     memorySize: 128
@@ -112,7 +122,7 @@ resources:
           Fn::GetAtt: [SnsemailLambdaFunction, Arn]
         Action: lambda:InvokeFunction
         Principal: sns.amazonaws.com
-        SourceArn: arn:aws:sns:us-east-1:276800331103:APSPOT-prod-SES
+        SourceArn: ${self:custom.config.sesTopicArn}
     # Allow the prod Pinpoint SMS SNS topic to invoke the snssms lambda.
     SnssmsPinpointProdInvokePermission:
       Type: AWS::Lambda::Permission
@@ -121,4 +131,4 @@ resources:
           Fn::GetAtt: [SnssmsLambdaFunction, Arn]
         Action: lambda:InvokeFunction
         Principal: sns.amazonaws.com
-        SourceArn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod
+        SourceArn: ${self:custom.config.smsTopicArn}

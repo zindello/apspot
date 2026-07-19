@@ -19,9 +19,12 @@ USAGESTRING = {
         "APSPOT USAGE INFORMATION - 6 MSGS",
         "TO SPOT SEND: \"! <Target> <Ref> <Freq> <Mode> <Comment>\" WITHOUT QUOTES",
         "TO GET SPOTS SEND: \"SPOTS TARGET\" | REQUESTS ARE CASE INSENSITIVE",
-        "VALID TARGETS: SOTA, WWFF, POTA, SIOTA",
+        "VALID TARGETS: SOTA, WWFF, POTA, SIOTA, TILES",
         "FOR MORE HELP SEND USAGE <Target> EG:\"USAGE WWFF\"",
         "INCLUDE \"APTEST\" IN COMMENT AND SPOT WILL NOT BE POSTED"
+    ],
+    "USAGE TILES": [
+        "EXAMPLE: \"! TILES EM73UU 14.285 SSB CQ TILE de portable\""
     ],
     "USAGE WWFF": [
         "EXAMPLE: \"! WWFF VKFF-1929 7.144 SSB CQCQ\""
@@ -60,7 +63,20 @@ def callapspotapi(action, message, callsign=None):
     response = []
     if action == "spot":
         print('Got a SPOT request for the API, checking destination')
-        if message[0] in ["POTA","WWFF","SOTA","SIOTA"]:
+        if message[0] in ["POTA","WWFF","SOTA","SIOTA","TILES"]:
+            if message[0] == "TILES":
+                print('Message destination is TILES, setting up the call to the API to send to tilesontheair.com')
+                tiles_full_url = APSPOTAPIURL + '/spot/tiles' + '?callsign=' + callsign + '&ref=' + urllib.parse.quote_plus(message[1]) + '&freq=' + urllib.parse.quote_plus(message[2]) + '&mode=' + message[3] + '&comment=' + urllib.parse.quote_plus(getcomment(message))
+                print(tiles_full_url)
+                tilesspot = requests.get(tiles_full_url, timeout=10)
+                if tilesspot.status_code == 200:
+                    print('Got a 200 response from the API, add response message')
+                    print(tilesspot.text)
+                    response.append(json.loads(tilesspot.text)['response'])
+                else:
+                    print('Got a non 200 response from the API, error out')
+                    print(tilesspot)
+                    response.append("Failed posting spot to tilesontheair.com")
             if message[0] == "POTA":
                 print('Message destination is POTA, setting up the call to the API to send to pota')
                 pota_full_url = APSPOTAPIURL + '/spot/pota' + '?callsign=' + callsign + '&ref=' + urllib.parse.quote_plus(message[1]) + '&freq=' + urllib.parse.quote_plus(message[2]) + '&mode=' + message[3] + '&comment=' + urllib.parse.quote_plus(getcomment(message))

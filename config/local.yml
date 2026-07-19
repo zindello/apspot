@@ -5,4 +5,12 @@ environment:
   pota_api_url: 'https://api.pota.app'
   pota_api_dev_url: 'https://devapi.pota.app'
   sota_api_url: 'https://https://api2.sota.org.uk'
+  tiles_api_url: 'https://icneuzxitdqtofutxbla.supabase.co/functions/v1/spot-create'
+  tiles_api_key: '<APSPOT_LOCAL_TILES_API_KEY>'
   APSPOTAPIURL: "https://qs3v66a0vk.execute-api.ap-southeast-2.amazonaws.com/"
+
+# Infra params (not injected as lambda env vars) referenced via custom.config in serverless.yml
+accountId: '276800331103'
+smsTopicName: 'APSPOT-Pinpoint-Dev'
+smsTopicArn: 'arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Dev'
+sesTopicArn: 'arn:aws:sns:us-east-1:276800331103:APSPOT-dev-SES'
