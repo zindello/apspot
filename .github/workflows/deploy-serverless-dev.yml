@@ -1,0 +1,34 @@
+name: Deploy Serverless (dev)
+
+# Deploys the AWS serverless stack (apspot) to the dev stage on push to dev,
+# and supports manual workflow_dispatch from any feature branch (e.g. to test
+# a deploy before merging). Requires AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+# secrets on the repo — both scoped to the dev deployment IAM user.
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "lambdas/**"
+      - "serverless.yml"
+      - "config/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch: # manual trigger from any branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - run: npm install
+      - name: Configure AWS credentials
+        run: npx serverless config credentials --stage dev --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Deploy serverless stack
+        run: npx serverless deploy --stage dev
