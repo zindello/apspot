@@ -1,0 +1,27 @@
+name: Deploy Serverless (prod)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lambdas/**"
+      - "serverless.yml"
+      - "config/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - run: npm install
+      - run: npx serverless config credentials --stage prod --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - run: npx serverless deploy --stage prod
