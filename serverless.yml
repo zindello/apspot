@@ -76,8 +76,8 @@ functions:
     memorySize: 128
     events:
       - sns:
-          arn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod
-          topicName: APSPOT-Pinpoint-Prod
+          arn: ${file(./config/${opt:stage}.yml):sns_sms_topic_arn}
+          topicName: ${file(./config/${opt:stage}.yml):sns_sms_topic_name}
   snsemail:
     handler: lambdas/sns_email.lambda_handler
     memorySize: 128
@@ -112,13 +112,13 @@ resources:
           Fn::GetAtt: [SnsemailLambdaFunction, Arn]
         Action: lambda:InvokeFunction
         Principal: sns.amazonaws.com
-        SourceArn: arn:aws:sns:us-east-1:276800331103:APSPOT-prod-SES
-    # Allow the prod Pinpoint SMS SNS topic to invoke the snssms lambda.
-    SnssmsPinpointProdInvokePermission:
+        SourceArn: ${file(./config/${opt:stage}.yml):sns_email_topic_arn}
+    # Allow the Pinpoint SMS SNS topic to invoke the snssms lambda.
+    SnssmsPinpointInvokePermission:
       Type: AWS::Lambda::Permission
       Properties:
         FunctionName:
           Fn::GetAtt: [SnssmsLambdaFunction, Arn]
         Action: lambda:InvokeFunction
         Principal: sns.amazonaws.com
-        SourceArn: arn:aws:sns:ap-southeast-2:276800331103:APSPOT-Pinpoint-Prod
+        SourceArn: ${file(./config/${opt:stage}.yml):sns_sms_topic_arn}
