@@ -12,9 +12,9 @@ name: Build APRS Gateway Container
 on:
   push:
     branches:
-      - apspotv2
-    paths:
-      - "docker/**"
+      - main
+  paths:
+    - "docker/**"
   workflow_dispatch:
 
 jobs:
