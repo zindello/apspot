@@ -18,7 +18,7 @@ messageNo = 0
 messageDelay = 1.5
 retryAttempts = 5
 
-messageCache = cachetools.TTLCache(maxsize=99999, ttl=1800)
+messageCache = cachetools.TTLCache(maxsize=99999, ttl=60)
 ackCache = cachetools.TTLCache(maxsize=99999, ttl=(60 * (retryAttempts + 1)))
 
 CALLSIGN = os.getenv('CALLSIGN')
@@ -157,6 +157,16 @@ def incomingMessage(packet):
             if message.get('msgNo'):
                 sendack(message['from'], message['msgNo'])
                 time.sleep(messageDelay)
+            # Deduplicate: the same message reaches us repeatedly via multiple
+            # IGate paths and on-air loops. Ack every copy (above) so the sender
+            # stops retransmitting, but only process and respond to the first
+            # copy seen within the cache TTL.
+            global messageCache
+            dedupekey = message['from'] + '|' + str(message.get('msgNo') or message['message_text'])
+            if dedupekey in messageCache:
+                logging.info('Duplicate message ' + dedupekey + ' within TTL, acked only, not reprocessing')
+                return
+            messageCache[dedupekey] = True
             messagetext = message['message_text'].upper()
             if messagetext.startswith("!"):
                 response = processmessage("spot", messagetext[2:], message['from'].split("-")[0])
