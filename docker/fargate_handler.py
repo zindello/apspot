@@ -25,6 +25,12 @@ CALLSIGN = os.getenv('CALLSIGN')
 PASSCODE = os.getenv('PASSCODE')
 APSPOTAPIURL = os.getenv('APSPOTAPIURL')
 
+# Callsigns banned from the gateway. Automated stations reply to our replies and
+# create an infinite message loop, so we drop their packets before acking or
+# responding. Set via the BLACKLIST env var (comma-separated, e.g. "RGSTRY");
+# matched on the base callsign (SSID stripped).
+BLACKLIST = os.getenv('BLACKLIST', '').upper().replace(' ', '').split(',')
+
 USAGESTRING = {
     "USAGE": [
         "APSPOT USAGE INFORMATION - 6 MSGS",
@@ -140,6 +146,9 @@ def processmessage(action, message, activator=""):
 def incomingMessage(packet):
     message = aprslib.parse(packet)
     logging.info('Got message from APRS ' + str(message))
+    if message.get('from', '').split('-')[0].upper() in BLACKLIST:
+        logging.info('Dropping packet from blacklisted callsign ' + str(message.get('from')))
+        return
     if (message.get('message_text')):
         if '\x00' in message.get('message_text'):
             logging.info('Invalid APRS Message. Dropping')
