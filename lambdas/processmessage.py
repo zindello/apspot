@@ -142,7 +142,11 @@ def validatemessage(message):
     if len(message) > 4:
         print("Valid Spot Message Length")
     else:
-        if message.split('.') > 1:
+        # message is the already-split token list. If it arrived as a single
+        # dot-delimited blob (e.g. "POTA.VK-3024.7.195.SSB.CQCQ"), it collapses
+        # to one token with several dots - flag that the user used dots not
+        # spaces; otherwise it's just a malformed/too-short spot.
+        if len(message) == 1 and message[0].count('.') > 1:
             print('ERROR: VALIDATION FAILED: USER USING DOTS NOT SPACES')
             return "INVALID SPOT - PLEASE USE SPACES NOT DOTS"
         else:

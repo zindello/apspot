@@ -1,4 +1,7 @@
+# Lambda deployment dependencies (bundled by serverless-python-requirements).
+# The lambdas only import `requests`; boto3 is provided by the Lambda runtime.
+# cachetools / fuzzywuzzy / python-Levenshtein are used only by the APRS
+# gateway container (see docker/requirements.txt), not by any lambda, so they
+# are intentionally not bundled here - keeping the package small speeds up cold
+# starts.
 requests
-cachetools
-fuzzywuzzy
-python-Levenshtein

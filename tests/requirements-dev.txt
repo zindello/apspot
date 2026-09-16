@@ -1,0 +1,5 @@
+# Local test dependencies. boto3 is stubbed in conftest.py (it is provided by
+# the AWS Lambda runtime, not vendored), so only the lambdas' real third-party
+# import — requests — plus pytest are needed to run the suite.
+pytest
+requests
