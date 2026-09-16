@@ -12,7 +12,10 @@ provider:
   runtime: python3.12
   architecture: arm64
   memorySize: 512
-  timeout: 30
+  # Must stay under HTTP API's hard 30s integration cap, or the gateway can
+  # time out while a lambda is still finishing successfully. 25s still clears
+  # processmessage's worst case (two sequential 10s downstream calls).
+  timeout: 25
   logRetentionInDays: 14
   httpApi:
     name: apspot
