@@ -21,7 +21,7 @@ jobs:
           node-version: '20'
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12' # match provider.runtime so packaging uses the same interpreter
       - run: npm install
       - name: Configure AWS credentials
         run: npx serverless config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
