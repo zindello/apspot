@@ -9,10 +9,10 @@ provider:
   name: aws
   stage: ${opt:stage}-
   region: ap-southeast-2
-  tracing:
-    apiGateway: true
-    lambda: true
-  runtime: python3.9
+  runtime: python3.12
+  architecture: arm64
+  memorySize: 512
+  timeout: 30
   logRetentionInDays: 14
   httpApi:
     name: apspot
@@ -31,66 +31,56 @@ provider:
 functions:
   spotswwff:
     handler: lambdas/spots_wwff.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
           path: /spots/wwff
   spotssota:
     handler: lambdas/spots_sota.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
           path: /spots/sota
   spotssiota:
     handler: lambdas/spots_siota.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
           path: /spots/siota
   spotspota:
     handler: lambdas/spots_pota.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
           path: /spots/pota
   spotpnp:
     handler: lambdas/spot_pnp.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
           path: /spot/pnp
   spotpota:
     handler: lambdas/spot_pota.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
           path: /spot/pota
   snssms:
     handler: lambdas/sns_sms.lambda_handler
-    memorySize: 128
     events:
       - sns:
           arn: ${file(./config/${opt:stage}.yml):sns_sms_topic_arn}
           topicName: ${file(./config/${opt:stage}.yml):sns_sms_topic_name}
   snsemail:
     handler: lambdas/sns_email.lambda_handler
-    memorySize: 128
   searchpota:
     handler: lambdas/search_pota.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
           path: /search/pota
   processmessage:
     handler: lambdas/processmessage.lambda_handler
-    memorySize: 128
     events:
       - httpApi:
           method: GET
