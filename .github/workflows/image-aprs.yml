@@ -1,0 +1,79 @@
+name: image-aprs
+
+# The APRS-IS gateway's image for zindello's cluster-02. On each pull request into dev or
+# main that changes docker/: build docker/DockerfileAPSPOT, push it to
+# ghcr.io/zindello/apspot-aprs tagged with the PR's head commit, and write that tag into
+# deploy/values.yaml on the PR's branch. Merging into dev deploys apspot-aprs-dev; promoting
+# dev to main deploys the same image as apspot-aprs. Never pushes to main or dev.
+#
+# Skipped for:
+#   - the promotion (dev into main): the image was built on the way into dev, and its
+#     tag comes with it;
+#   - pull requests from forks: their token can't push;
+#   - the job's own tag commits (GitHub lists a run for each, waiting for approval; it
+#     builds nothing either way).
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "docker/**"
+      - ".github/workflows/image-aprs.yml"
+
+permissions:
+  contents: write  # the tag commit on the PR's branch
+  packages: write  # ghcr.io/zindello/apspot-aprs
+
+concurrency:
+  group: image-aprs-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !(github.event.pull_request.head.ref == 'dev' && github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-24.04
+    env:
+      IMAGE: ghcr.io/zindello/apspot-aprs
+      TAG: ${{ github.event.pull_request.head.sha }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      # A newer push to the branch has its own run (and cancels this one).
+      - name: Check the branch is still at the PR's head
+        run: test "$(git rev-parse HEAD)" = "$TAG"
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
+
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6  # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
+        with:
+          context: docker
+          file: docker/DockerfileAPSPOT
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.TAG }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ env.TAG }}
+
+      - name: Stage the tag in deploy/values.yaml
+        run: |
+          test "$(grep -c '^  tag: ' deploy/values.yaml)" = 1
+          sed -i -E "s|^  tag: .*|  tag: \"${TAG}\"|" deploy/values.yaml
+          git add deploy/values.yaml
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "deploy: apspot-aprs image ${TAG:0:12}"
+          git push origin "HEAD:refs/heads/${HEAD_REF}"
