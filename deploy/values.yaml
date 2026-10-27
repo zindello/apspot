@@ -1,0 +1,35 @@
+# apspot-aprs: the APRS-IS gateway for apspot.radio (callsign APSPOT). Outbound only.
+#
+# Two instances, one chart, both in namespace dmz-apspot-aprs:
+#   apspot-aprs      from main: this file
+#   apspot-aprs-dev  from dev:  this file, then values-dev.yaml over it
+# A change reaches dev when its pull request merges into dev, and prod when dev is
+# promoted to main, image tag and all.
+
+name: apspot-aprs
+
+# 1 runs it, 0 stages it (nothing running). Never more than 1: one gateway per callsign on
+# APRS-IS. Set it to 1 only once cluster-01's apspot-aprs has stopped.
+replicas: 0
+
+image:
+  repository: ghcr.io/zindello/apspot-aprs
+  # The commit the image was built from. Written by CI on the pull request; don't edit.
+  tag: "c110703ad2e5859112dac371efebb7ef02cf130c"
+
+# Not secrets: an APRS-IS passcode is a public checksum of the callsign, sent in the clear
+# in every packet.
+env:
+  CALLSIGN: APSPOT
+  PASSCODE: "11958"
+  APSPOTAPIURL: https://vf0oj0s1ye.execute-api.ap-southeast-2.amazonaws.com
+  BLACKLIST: RGSTRY
+
+# cores 1 and memory 256 were caps on cluster-01.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: "1"
+    memory: 256Mi
