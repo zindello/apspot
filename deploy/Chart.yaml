@@ -1,0 +1,5 @@
+apiVersion: v2
+name: apspot-aprs
+description: The APRS-IS gateway for apspot.radio, on zindello's cluster-02 (namespace dmz-apspot-aprs)
+type: application
+version: 0.1.0
