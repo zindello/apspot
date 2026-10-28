@@ -4,7 +4,7 @@
 name: apspot-aprs-dev
 
 # As for prod: 1 only once cluster-01's apspot-aprs-dev has stopped.
-replicas: 0
+replicas: 1
 
 env:
   CALLSIGN: APSPO7

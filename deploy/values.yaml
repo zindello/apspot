@@ -10,7 +10,7 @@ name: apspot-aprs
 
 # 1 runs it, 0 stages it (nothing running). Never more than 1: one gateway per callsign on
 # APRS-IS. Set it to 1 only once cluster-01's apspot-aprs has stopped.
-replicas: 0
+replicas: 1
 
 image:
   repository: ghcr.io/zindello/apspot-aprs
