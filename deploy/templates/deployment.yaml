@@ -23,6 +23,21 @@ spec:
         app.kubernetes.io/part-of: apspot-aprs
     spec:
       automountServiceAccountToken: false
+      # Off a lost node in 30 seconds, not Kubernetes' default 5 minutes (the owner, 2 November
+      # 2026: "Once it's dead it's dead"). The gateway has no volume, so its replacement starts at
+      # once on another node. Counted from when Kubernetes marks the node unreachable or not ready,
+      # itself about 50 seconds after the node goes quiet. Accepted with it: a node that's only cut
+      # off from the control plane, not dead, keeps its pod running until it's back, so for that
+      # long two gateways may be signed in to APRS-IS as one callsign.
+      tolerations:
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
       # The image writes nothing; nobody (65534) is enough.
       securityContext:
         runAsNonRoot: true
