@@ -15,7 +15,7 @@ replicas: 1
 image:
   repository: ghcr.io/zindello/apspot-aprs
   # The commit the image was built from. Written by CI on the pull request; don't edit.
-  tag: "c110703ad2e5859112dac371efebb7ef02cf130c"
+  tag: "6a0896939a1b677b4c3e15e9c715b5baae1e9657"
 
 # Not secrets: an APRS-IS passcode is a public checksum of the callsign, sent in the clear
 # in every packet.
