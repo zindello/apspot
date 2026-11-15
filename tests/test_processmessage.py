@@ -66,10 +66,15 @@ def test_usage_known_target():
     assert pm.usage("USAGE POTA") == ['EXAMPLE: "! POTA VK-3024 7.195 SSB CQCQ"']
 
 
-def test_usage_unknown_target():
-    # This is the "USAGE SMS"-style path seen in the RF logs: not an error to fix.
+def test_usage_sms_target():
     result = pm.usage("USAGE SMS")
-    assert '"USAGE SMS" NOT SUPPORTED' in result[0]
+    assert any("SMS" in line for line in result)
+    assert any(line.startswith("TO SPOT SEND") for line in result)
+
+
+def test_usage_unknown_target():
+    result = pm.usage("USAGE BOGUS")
+    assert '"USAGE BOGUS" NOT SUPPORTED' in result[0]
     assert "SEND \"USAGE\" FOR MORE INFO" in result[1]
 
 
@@ -101,6 +106,44 @@ def test_handler_usage_default(http):
     result = pm.lambda_handler(_event("usage", ""), None)
     body = json.loads(result["body"])
     assert body["response"][0].startswith("APSPOT USAGE INFORMATION")
+
+
+def test_handler_usage_from_aprs_gateway(http):
+    # The APRS gateway strips the leading "USAGE " word itself.
+    result = pm.lambda_handler(_event("usage", "SMS"), None)
+    body = json.loads(result["body"])
+    assert body["response"] == pm.USAGESTRING["USAGE SMS"]
+
+
+def test_handler_usage_from_sms_gateway(http):
+    # The SMS lambda passes the whole message plus a transport tag.
+    result = pm.lambda_handler(_event("usage", "USAGE [SMS]"), None)
+    body = json.loads(result["body"])
+    assert body["response"] == pm.USAGESTRING["USAGE"]
+
+    result = pm.lambda_handler(_event("usage", "USAGE SMS [SMS]"), None)
+    body = json.loads(result["body"])
+    assert body["response"] == pm.USAGESTRING["USAGE SMS"]
+
+
+def test_handler_usage_from_inreach(http):
+    result = pm.lambda_handler(_event("usage", "USAGE WWFF [InReach]"), None)
+    body = json.loads(result["body"])
+    assert body["response"] == pm.USAGESTRING["USAGE WWFF"]
+
+
+def test_handler_usage_from_email_subject(http):
+    # The email lambda passes the whole subject with no tag.
+    result = pm.lambda_handler(_event("usage", "USAGE POTA"), None)
+    body = json.loads(result["body"])
+    assert body["response"] == pm.USAGESTRING["USAGE POTA"]
+
+
+def test_handler_usage_random_text_not_supported(http):
+    result = pm.lambda_handler(_event("usage", "HELLO [SMS]"), None)
+    body = json.loads(result["body"])
+    assert "NOT SUPPORTED" in body["response"][0]
+    assert "SEND \"USAGE\" FOR MORE INFO" in body["response"][1]
 
 
 def test_callapspotapi_unsupported_target():
