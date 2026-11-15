@@ -34,6 +34,12 @@ USAGESTRING = {
     ],
     "USAGE POTA": [
         "EXAMPLE: \"! POTA VK-3024 7.195 SSB CQCQ\""
+    ],
+    "USAGE SMS": [
+        "APSPOT VIA SMS - TEXT COMMANDS TO THE APSPOT NUMBER",
+        "TO SPOT SEND: \"!<YourCall> <Target> <Ref> <Freq> <Mode> <Comment>\"",
+        "EXAMPLE: \"!VK1ABC WWFF VKFF-1929 7.144 SSB CQCQ\"",
+        "TO GET SPOTS SEND: \"SPOTS <Target>\" | REPLIES ARE LIMITED TO 5 MSGS"
     ]
 }
 
@@ -211,10 +217,18 @@ def lambda_handler(event, context):
     elif action == 'search':
         response = search(urllib.parse.unquote(event["queryStringParameters"]["message"]).split())
     else:
-        if urllib.parse.unquote(event["queryStringParameters"]["message"]) == "":
+        msg = urllib.parse.unquote(event["queryStringParameters"]["message"]).upper()
+        # The gateways disagree on what they send here: the APRS gateway strips
+        # the leading "USAGE " word, while the SMS/email lambdas pass the whole
+        # message (the SMS one with a trailing [SMS]/[InReach] transport tag).
+        # Normalise so a usage lookup works from every transport.
+        msg = msg.replace("[SMS]", "").replace("[INREACH]", "").strip()
+        if msg == "USAGE" or msg.startswith("USAGE "):
+            msg = msg[len("USAGE"):].strip()
+        if msg == "":
             usagestring = "USAGE"
-        else: 
-            usagestring = "USAGE " + urllib.parse.unquote(event["queryStringParameters"]["message"].upper())
+        else:
+            usagestring = "USAGE " + msg
         response = usage(usagestring)
 
     response = {
