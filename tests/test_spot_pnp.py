@@ -16,39 +16,45 @@ def test_mhz_to_khz():
     assert spot_pnp.mhz_to_khz("garbage") == "garbage"
 
 
+def sent_fields(captured):
+    # sendpnpspot posts multipart via files={field: (None, value)}.
+    return {k: v[1] for k, v in captured["files"].items()}
+
+
 def test_sendpnpspot_success(http):
     captured = {}
 
-    def fake_post(url, data=None, **kw):
+    def fake_post(url, files=None, **kw):
         captured["url"] = url
-        captured["data"] = data
+        captured["files"] = files
         return FakeResponse(200, json_body={"success": True, "message": "Thanks for the data!"})
 
     http(spot_pnp, post=fake_post)
     result = spot_pnp.sendpnpspot("WWFF", "VK1ABC", "VKFF-1929", "SSB", "7.144", "CQ")
+    fields = sent_fields(captured)
     assert captured["url"].endswith("/spots")
-    assert captured["data"]["userID"] == "APSPOT"
-    assert captured["data"]["APIKey"] == "TESTKEY"
-    assert captured["data"]["activator"] == "VK1ABC"
-    assert captured["data"]["spotter"] == "VK1ABC"
-    assert captured["data"]["reference"] == "VKFF-1929"
-    assert captured["data"]["frequency"] == "7144"
-    assert captured["data"]["comments"] == "CQ"
+    assert fields["userID"] == "APSPOT"
+    assert fields["APIKey"] == "TESTKEY"
+    assert fields["activator"] == "VK1ABC"
+    assert fields["spotter"] == "VK1ABC"
+    assert fields["reference"] == "VKFF-1929"
+    assert fields["frequency"] == "7144"
+    assert fields["comments"] == "CQ"
     assert "SUCCESSFULLY SPOTTED" in result
 
 
 def test_sendpnpspot_aptest_adds_debug_comment(http):
     captured = {}
 
-    def fake_post(url, data=None, **kw):
+    def fake_post(url, files=None, **kw):
         captured["url"] = url
-        captured["data"] = data
+        captured["files"] = files
         return FakeResponse(200, json_body={"success": True, "message": "Thanks for the data!"})
 
     http(spot_pnp, post=fake_post)
     result = spot_pnp.sendpnpspot("WWFF", "VK1ABC", "VKFF-1929", "SSB", "7.144", "APTEST")
     assert captured["url"].endswith("/spots")
-    assert "DEBUG" in captured["data"]["comments"]
+    assert "DEBUG" in sent_fields(captured)["comments"]
     assert "TEST SPOTTED" in result
 
 

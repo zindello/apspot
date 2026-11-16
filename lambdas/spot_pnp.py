@@ -89,7 +89,11 @@ def sendpnpspot(actclass, actcallsign, actsite, actmode, actfreq, actcomment):
     }
     logpayload = {k: v for k, v in spotpayload.items() if k != "APIKey"}
     print("Sending " + json.dumps(logpayload))
-    spot = requests.post(pnp_api_url + "/spots", data=spotpayload, headers=HEADERS)
+    # Posted as multipart/form-data: the platform's documented example uses
+    # curl -F, and newer platform builds 500 on urlencoded bodies.
+    spot = requests.post(pnp_api_url + "/spots",
+                         files={k: (None, str(v)) for k, v in spotpayload.items()},
+                         headers=HEADERS)
     if spot.status_code == 200:
         try:
             result = json.loads(spot.text)
