@@ -1,5 +1,5 @@
 environment:
-  pnp_api_url: 'https://parksnpeaks.org/api'
+  pnp_api_url: 'https://dev.ontheair.nz/api'
   pnp_api_user_id: 'APSPOT'
   pnp_api_user_key: '5829'
   pota_api_url: 'https://api.pota.app'
